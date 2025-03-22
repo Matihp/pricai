@@ -1,0 +1,41 @@
+---
+import { getLocaleAndTranslations } from '../../utils/i18n';
+
+const locale = Astro.currentLocale || 'es';
+const { t } = getLocaleAndTranslations(locale);
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="bg-gray-800 text-white py-8 mt-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div>
+        <h3 class="text-lg font-semibold mb-4">AI Pricing</h3>
+        <p class="text-gray-300 text-sm">
+          Comparativa de precios de IAs, APIs y editores de código potenciados por inteligencia artificial.
+        </p>
+      </div>
+      
+      <div>
+        <h3 class="text-lg font-semibold mb-4">Enlaces</h3>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/" class="text-gray-300 hover:text-white">{t('nav.home')}</a></li>
+          <li><a href="/api-pricing" class="text-gray-300 hover:text-white">{t('nav.apiPricing')}</a></li>
+          <li><a href="/individual-pricing" class="text-gray-300 hover:text-white">{t('nav.individualPricing')}</a></li>
+          <li><a href="/code-editors" class="text-gray-300 hover:text-white">{t('nav.codeEditors')}</a></li>
+        </ul>
+      </div>
+      
+      <div>
+        <h3 class="text-lg font-semibold mb-4">Información</h3>
+        <p class="text-gray-300 text-sm">
+          Esta información se actualiza diariamente. Los precios pueden variar. Consulte siempre los sitios oficiales para información más precisa.
+        </p>
+      </div>
+    </div>
+    
+    <div class="border-t border-gray-700 mt-8 pt-6 text-center text-sm text-gray-400">
+      <p>&copy; {currentYear} AI Pricing. Todos los derechos reservados.</p>
+    </div>
+  </div>
+</footer>
