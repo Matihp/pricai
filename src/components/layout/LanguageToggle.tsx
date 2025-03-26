@@ -1,48 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from '../../utils/i18n';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 import type { SupportedLocale } from '../../utils/i18n';
 
 interface LanguageToggleProps {
-  currentLocale?: string;
+  currentLocale: SupportedLocale;
 }
 
-export default function LanguageToggle({ currentLocale = 'es' }: LanguageToggleProps) {
-  const { locale, setLocale } = useTranslation(currentLocale as SupportedLocale);
-  const [currentLang, setCurrentLang] = useState(currentLocale as SupportedLocale);
+export default function LanguageToggle({ currentLocale }: LanguageToggleProps) {
+  const [mounted, setMounted] = useState(false);
   
+  // Only run on client-side to avoid hydration mismatch
   useEffect(() => {
-    setCurrentLang(locale);
-  }, [locale]);
+    setMounted(true);
+  }, []);
+  
+  if (!mounted) return null;
   
   const toggleLanguage = () => {
-    const newLocale = currentLang === 'es' ? 'en' : 'es';
-    setCurrentLang(newLocale);
-    setLocale(newLocale);
+    const newLocale = currentLocale === 'es' ? 'en' : 'es';
+    const currentPath = window.location.pathname;
     
-    // Actualizar URL para reflejar el cambio de idioma
-    const currentUrl = new URL(window.location.href);
-    const path = currentUrl.pathname;
+    // Replace the current locale in the path with the new one
+    const newPath = currentPath.replace(`/${currentLocale}`, `/${newLocale}`);
     
-    // Obtener la ruta sin el prefijo de idioma actual
-    let newPath = path;
-    if (path.startsWith('/es/')) {
-      newPath = path.replace('/es/', '/en/');
-    } else if (path.startsWith('/en/')) {
-      newPath = path.replace('/en/', '/es/');
-    } else {
-      // Si no tiene prefijo, añadir el nuevo
-      newPath = `/${newLocale}${path}`;
-    }
-    
-    window.location.href = `${currentUrl.origin}${newPath}${currentUrl.search}`;
+    // Navigate to the new path
+    window.location.href = newPath;
   };
   
   return (
-    <button
-      onClick={toggleLanguage}
-      className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 hover:bg-gray-200"
-    >
-      {currentLang === 'es' ? 'EN' : 'ES'}
-    </button>
+    <Button variant="outline" size="sm" onClick={toggleLanguage}>
+      {currentLocale === 'es' ? 'English' : 'Español'}
+    </Button>
   );
 }
