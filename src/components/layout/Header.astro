@@ -2,6 +2,7 @@
 import LanguageToggle from './LanguageToggle';
 import { getLocaleAndTranslations } from '../../utils/i18n';
 import ThemeToggle from '../ThemeToggle.astro';
+import { Button } from '../ui/button';
 
 const currentPath = Astro.url.pathname;
 const locale = Astro.currentLocale || 'es';
@@ -23,10 +24,22 @@ const isCurrentPath = (itemPath: string) => {
 };
 ---
 
-<header class="bg-white dark:bg-gray-900 shadow-sm transition-colors">
+<header class="sticky top-0  z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+  <div class="flex h-16 px-16 items-center justify-between">
+    <div class="font-bold text-2xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+      AI Pricing Hub
+    </div>
+    <div class="flex items-center gap-4">
+      <ThemeToggle />
+      <LanguageToggle client:load currentLocale={locale as 'en' | 'es'} />
+    </div>
+  </div>
+</header>
+
+<!-- <header class="bg-white dark:bg-gray-900 shadow-sm transition-colors">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between h-16">
-      <!-- Logo y navegación de escritorio -->
+      
       <div class="flex items-center">
         <a href={`${localePrefix}/`} class="flex-shrink-0 flex items-center">
           <span class="text-blue-600 dark:text-blue-400 font-bold text-xl">AI Pricing</span>
@@ -48,12 +61,12 @@ const isCurrentPath = (itemPath: string) => {
         </nav>
       </div>
       
-      <!-- Controles de la derecha (idioma, tema, etc.) -->
+     
       <div class="flex items-center space-x-4">
         <ThemeToggle />
         <LanguageToggle client:load currentLocale={locale} />
         
-        <!-- Botón de menú móvil -->
+        
         <button 
           type="button" 
           id="mobile-menu-button"
@@ -62,11 +75,11 @@ const isCurrentPath = (itemPath: string) => {
           aria-expanded="false"
         >
           <span class="sr-only">Abrir menú principal</span>
-          <!-- Icono de menú (tres líneas) -->
+          
           <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
-          <!-- Icono de cerrar (X) -->
+          
           <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -75,7 +88,7 @@ const isCurrentPath = (itemPath: string) => {
     </div>
   </div>
   
-  <!-- Menú móvil -->
+  
   <div id="mobile-menu" class="hidden md:hidden">
     <div class="px-2 pt-2 pb-3 space-y-1 border-t dark:border-gray-700">
       {navItems.map(item => (
@@ -93,9 +106,9 @@ const isCurrentPath = (itemPath: string) => {
       ))}
     </div>
   </div>
-</header>
+</header> -->
 
-<script>
+<!-- <script>
   document.addEventListener('DOMContentLoaded', () => {
     const menuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
@@ -114,4 +127,4 @@ const isCurrentPath = (itemPath: string) => {
       });
     }
   });
-</script>
+</script> -->
