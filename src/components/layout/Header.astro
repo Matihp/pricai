@@ -2,7 +2,6 @@
 import LanguageToggle from './LanguageToggle';
 import { getLocaleAndTranslations } from '../../utils/i18n';
 import ThemeToggle from '../ThemeToggle.astro';
-import { Button } from '../ui/button';
 
 const currentPath = Astro.url.pathname;
 const locale = Astro.currentLocale || 'es';
@@ -23,11 +22,11 @@ const isCurrentPath = (itemPath: string) => {
   return currentPath === itemPath;
 };
 ---
-
 <header class="sticky top-0  z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
   <div class="flex h-16 px-16 items-center justify-between">
     <div class="font-bold text-2xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-      AI Pricing Hub
+      
+      <a href=`/`>AI Pricing Hub</a>
     </div>
     <div class="flex items-center gap-4">
       <ThemeToggle />

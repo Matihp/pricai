@@ -1,11 +1,8 @@
-
-
 <button
   id="themeToggle"
   class="text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900 transition-colors duration-300"
   aria-label="Toggle dark mode"
 >
-
   <svg width="20" height="20" viewBox="0 0 24 24" class="hidden dark:block">
     <path
       fill="currentColor"
@@ -22,48 +19,37 @@
 </button>
 
 <script is:inline>
-
-    function applyTheme() {
-      const savedTheme = localStorage.getItem("theme");
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  
-
-      if (savedTheme === "dark" || (savedTheme === null && prefersDark)) {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    }
-  
-
-    applyTheme();
-  
-
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
-
-      if (!localStorage.getItem("theme")) {
-        if (e.matches) {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-      }
-    });
-  
-
-    if (!window.themeToggleInitialized) {
-      window.themeToggleInitialized = true;
+  function setupThemeToggle() {
+    const themeToggle = document.getElementById('themeToggle');
+    
+    if (themeToggle) {
+      const newThemeToggle = themeToggle.cloneNode(true);
+      themeToggle.parentNode.replaceChild(newThemeToggle, themeToggle);
       
-
-      document.addEventListener('DOMContentLoaded', () => {
-        const themeToggles = document.querySelectorAll("[id^='themeToggle']");
-        themeToggles.forEach(toggle => {
-          toggle.addEventListener("click", () => {
-            document.documentElement.classList.toggle("dark");
-            const isDark = document.documentElement.classList.contains("dark");
-            localStorage.setItem("theme", isDark ? "dark" : "light");
-          });
-        });
+      newThemeToggle.addEventListener('click', () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
       });
     }
-  </script>
+  }
+
+  const theme = (() => {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+      return localStorage.getItem('theme');
+    }
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+    return 'light';
+  })();
+  
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+
+  document.addEventListener('DOMContentLoaded', setupThemeToggle);
+  
+  document.addEventListener('astro:after-swap', setupThemeToggle);
+</script>

@@ -21,6 +21,7 @@ const {
 <!doctype html>
 <html lang={locale}>
   <head>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -44,9 +45,19 @@ const {
       <slot />
     </main>
     <Footer />
+    <script is:inline>
+      document.addEventListener('astro:after-swap', () => {
+        const theme = localStorage.getItem("theme");
+        if (theme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else if (theme === "light") {
+          document.documentElement.classList.remove("dark");
+        }
+      });
+    </script>
   </body>
 </html>
-
+    
 <style is:global>
   :root {
     --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
