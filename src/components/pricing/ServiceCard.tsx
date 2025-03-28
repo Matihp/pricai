@@ -20,6 +20,20 @@ import {
 import type { AIService } from "@/data/ai-data";
 import { type SupportedLocale } from "../../utils/i18n";
 
+// Function to generate a color based on the service name
+const stringToColor = (str: string) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let color = "#";
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xff;
+    color += ("00" + value.toString(16)).substr(-2);
+  }
+  return color;
+};
+
 interface ServiceCardProps {
   service: AIService;
   locale?: SupportedLocale;
@@ -37,6 +51,8 @@ export default function ServiceCard({
   const features = Array.isArray(service.features)
     ? service.features
     : service.features[locale] || service.features["en"];
+    
+  const logoColor = stringToColor(service.name);
 
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md flex flex-col h-full">
@@ -46,12 +62,20 @@ export default function ServiceCard({
         </div>
       )}
       <CardHeader>
-        <div className="flex justify-between items-start">
-          <CardTitle className="line-clamp-1 text-xl">{service.name}</CardTitle>
-          <div className="flex items-center gap-1 text-sm">
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span>{service.rating.toFixed(1)}</span>
+        <div className="flex items-center gap-3 mb-2">
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
+            style={{
+              backgroundColor: `${logoColor}20`,
+              borderColor: `${logoColor}40`,
+              border: `1px outset rgba(255, 255, 255, 0.2)`
+            }}
+          >
+            <span className="text-lg font-bold" style={{ color: logoColor }}>
+              {service.name.charAt(0).toUpperCase()}
+            </span>
           </div>
+          <CardTitle className="line-clamp-1 text-xl">{service.name}</CardTitle>
         </div>
         <CardDescription className="line-clamp-2 min-h-[40px]">
           {description}
@@ -76,12 +100,22 @@ export default function ServiceCard({
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
-              Vista previa
+              Características
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>{service.name}</DialogTitle>
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: `${logoColor}20` }}
+                >
+                  <span className="text-lg font-bold" style={{ color: logoColor }}>
+                    {service.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <DialogTitle>{service.name}</DialogTitle>
+              </div>
               <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -106,10 +140,10 @@ export default function ServiceCard({
             <div className="flex justify-end">
               <Button
                 onClick={() =>
-                  (window.location.href = `/services/${service.id}`)
+                  (window.location.href = `/${locale}/${service.type}/${service.id}`)
                 }
               >
-                Ver detalles completos
+                Ver detalles
               </Button>
             </div>
           </DialogContent>
@@ -117,7 +151,7 @@ export default function ServiceCard({
         <Button
           variant="default"
           size="sm"
-          onClick={() => (window.location.href = `/services/${service.id}`)}
+          onClick={() => (window.location.href = `/${locale}/${service.type}/${service.id}`)}
         >
           Detalles
         </Button>
