@@ -1,0 +1,212 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { getLocaleAndTranslations } from '../../../utils/i18n';
+import type { SupportedLocale } from '../../../utils/i18n';
+import { Star, ArrowLeft, Calendar, Check, X } from 'lucide-react';
+import { aiServices } from '../../../data/ai-data';
+// Obtener el locale
+const locale = Astro.currentLocale || 'es';
+const typedLocale = (locale === 'es' || locale === 'en') ? locale as SupportedLocale : 'es' as SupportedLocale;
+const { t } = getLocaleAndTranslations(typedLocale);
+
+const { type, id } = Astro.params;
+
+let service = aiServices.find(service => service.id === id && service.type === type);
+
+if (!service) {
+  return Astro.redirect(`/${locale}/`);
+}
+
+const description = typeof service.description === 'object' && service.description[typedLocale] 
+  ? service.description[typedLocale] 
+  : typeof service.description === 'string' 
+    ? service.description 
+    : typedLocale === 'en' 
+      ? 'Description not available in English' 
+      : 'Descripción no disponible en español';
+
+const features = Array.isArray(service.features)
+  ? service.features
+  : service.features[typedLocale] || service.features["en"];
+
+const typeTranslation = {
+  api: typedLocale === 'es' ? 'Servicios API' : 'API Services',
+  individual: typedLocale === 'es' ? 'Uso Individual' : 'Individual Use',
+  'code-editor': typedLocale === 'es' ? 'Editores de Código' : 'Code Editors'
+};
+
+const featureLabels = {
+  hasFree: typedLocale === 'es' ? 'Nivel Gratuito' : 'Free Tier',
+  hasAPI: typedLocale === 'es' ? 'Acceso API' : 'API Access',
+  commercialUse: typedLocale === 'es' ? 'Uso Comercial' : 'Commercial Use',
+  customModels: typedLocale === 'es' ? 'Modelos Personalizados' : 'Custom Models'
+};
+---
+
+<Layout 
+  title={`${service.name} - AI Pricing Hub`}
+  description={`${description} - ${t('meta.description')}`}
+>
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <a href={`/${locale}/`} class="inline-flex items-center text-primary hover:underline mb-6 transition-colors">
+      <ArrowLeft className="w-4 h-4 mr-2" />
+      {typedLocale === 'es' ? 'Volver al inicio' : 'Back to home'}
+    </a>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Información principal -->
+      <div class="lg:col-span-2 space-y-8">
+        <div class="bg-card rounded-xl shadow-sm p-6 border border-border">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                  {typeTranslation[service.type as keyof typeof typeTranslation]}
+                </span>
+                {service.isNew && (
+                  <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500">
+                    {typedLocale === 'es' ? 'Nuevo' : 'New'}
+                  </span>
+                )}
+              </div>
+              <h1 class="text-3xl font-bold">{service.name}</h1>
+            </div>
+            <div class="flex items-center gap-1 bg-card rounded-full px-3 py-1 shadow-sm border border-border">
+              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+              <span class="font-medium">{service.rating.toFixed(1)}</span>
+            </div>
+          </div>
+          
+          <p class="text-muted-foreground mb-6">{description}</p>
+          
+          <div class="flex flex-wrap gap-2 mb-6">
+            {service.categories.map((category: string) => (
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                {category}
+              </span>
+            ))}
+          </div>
+          
+          <div class="border-t border-border pt-6">
+            <h2 class="text-xl font-semibold mb-4">{typedLocale === 'es' ? 'Características principales' : 'Key Features'}</h2>
+            <ul class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {features.map((feature: string) => (
+                <li class="flex items-start">
+                  <div class="mr-3 mt-1">
+                    <div class="rounded-full bg-primary/10 p-1">
+                      <Check className="h-3 w-3 text-primary" />
+                    </div>
+                  </div>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        
+        <!-- Información adicional -->
+        <div class="bg-card rounded-xl shadow-sm p-6 border border-border">
+          <h2 class="text-xl font-semibold mb-4">{typedLocale === 'es' ? 'Información adicional' : 'Additional Information'}</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 class="text-sm font-medium text-muted-foreground mb-2">{typedLocale === 'es' ? 'Año de lanzamiento' : 'Release Year'}</h3>
+              <div class="flex items-center">
+                <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span>{service.releaseYear}</span>
+              </div>
+            </div>
+            
+            <div>
+              <h3 class="text-sm font-medium text-muted-foreground mb-2">{typedLocale === 'es' ? 'Características disponibles' : 'Available Features'}</h3>
+              <div class="space-y-2">
+                {Object.entries({
+                  hasFree: service.hasFree,
+                  hasAPI: service.hasAPI,
+                  commercialUse: service.commercialUse,
+                  customModels: service.customModels
+                }).map(([key, value]) => (
+                  <div class="flex items-center">
+                    {value ? (
+                      <Check className="h-4 w-4 mr-2 text-green-500" />
+                    ) : (
+                      <X className="h-4 w-4 mr-2 text-red-500" />
+                    )}
+                    <span>{featureLabels[key as keyof typeof featureLabels]}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sidebar con precios -->
+      <div class="lg:col-span-1">
+        <div class="bg-card rounded-xl shadow-sm p-6 border border-border sticky top-6">
+          <h2 class="text-xl font-semibold mb-4">{typedLocale === 'es' ? 'Información de precios' : 'Pricing Information'}</h2>
+          
+          <div class="mb-6">
+            <div class="text-3xl font-bold">{service.price}</div>
+            <div class="text-sm text-muted-foreground">{service.priceDetails}</div>
+          </div>
+          
+          <div class="space-y-4">
+            <a href="#" class="inline-flex items-center justify-center w-full bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md font-medium transition-colors">
+              {typedLocale === 'es' ? 'Visitar sitio web' : 'Visit Website'}
+            </a>
+            
+            <a href="#" class="inline-flex items-center justify-center w-full bg-secondary text-secondary-foreground hover:bg-secondary/90 px-4 py-2 rounded-md font-medium transition-colors">
+              {typedLocale === 'es' ? 'Comparar con otros servicios' : 'Compare with other services'}
+            </a>
+          </div>
+          
+          <div class="mt-6 pt-6 border-t border-border">
+            <h3 class="text-sm font-medium mb-2">{typedLocale === 'es' ? 'Compartir' : 'Share'}</h3>
+            <div class="flex gap-2">
+              <button class="p-2 rounded-full bg-secondary hover:bg-secondary/80 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+              </button>
+              <button class="p-2 rounded-full bg-secondary hover:bg-secondary/80 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>
+              </button>
+              <button class="p-2 rounded-full bg-secondary hover:bg-secondary/80 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              </button>
+              <button class="p-2 rounded-full bg-secondary hover:bg-secondary/80 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Servicios relacionados -->
+    <div class="mt-12">
+      <h2 class="text-2xl font-bold mb-6">{typedLocale === 'es' ? 'Servicios relacionados' : 'Related Services'}</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {aiServices
+          .filter(s => s.id !== service.id && s.categories.some(cat => service.categories.includes(cat)))
+          .slice(0, 3)
+          .map(relatedService => (
+            <a href={`/${locale}/${relatedService.type}/${relatedService.id}`} class="bg-card rounded-xl shadow-sm p-6 border border-border hover:shadow-md transition-all">
+              <div class="flex justify-between items-start mb-4">
+                <h3 class="font-semibold">{relatedService.name}</h3>
+                <div class="flex items-center gap-1 text-sm">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <span>{relatedService.rating.toFixed(1)}</span>
+                </div>
+              </div>
+              <p class="text-sm text-muted-foreground mb-4 line-clamp-2">
+                {typeof relatedService.description === 'object' 
+                  ? relatedService.description[typedLocale] 
+                  : relatedService.description}
+              </p>
+              <div class="text-lg font-bold">{relatedService.price}</div>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</Layout>
