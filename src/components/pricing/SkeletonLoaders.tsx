@@ -7,7 +7,7 @@ export function ServiceCardSkeleton() {
         <Skeleton className="w-10 h-10 rounded-lg shrink-0" />
         <Skeleton className="h-6 w-3/5" />
       </div>
-
+      
       <div className="px-6">
         <Skeleton className="h-4 w-full mb-2" />
         <Skeleton className="h-4 w-full" />
