@@ -1,15 +1,18 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import AIPricingHub from '../../components/AIPricingHub';
-import { aiServices } from '../../data/ai-data';
-import { getLocaleAndTranslations, type SupportedLocale } from '../../utils/i18n';
+import {  type SupportedLocale } from '../../utils/i18n';
+import { getAIServices } from '@/lib/service';
 
 const locale: SupportedLocale = 'en';
+const initialServices = await getAIServices();
+
+Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
 ---
 
 <Layout 
   title="AI Pricing Hub - Compare AI Tools and Services" 
   description="Find the perfect AI solution for your needs with our comprehensive pricing comparison tool."
 >
-  <AIPricingHub services={aiServices} locale={locale} client:load />
+  <AIPricingHub initialServices={initialServices} locale={locale} client:idle />
 </Layout>
