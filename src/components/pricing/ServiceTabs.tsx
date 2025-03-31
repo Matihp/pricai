@@ -1,4 +1,4 @@
-import { Filter, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Filter, X, ChevronDown, ChevronUp, FilterIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,7 @@ import type { AIService } from "@/data/ai-data";
 import ServiceCard from "./ServiceCard";
 import { type SupportedLocale } from "../../utils/i18n";
 import PaginationControls from "./PaginationControls";
+import { ServiceGridSkeleton, TabsSkeleton } from "./SkeletonLoaders";
 
 interface ServiceTabsProps {
   isFilterOpen: boolean;
@@ -21,6 +22,8 @@ interface ServiceTabsProps {
   currentPage: number;
   setCurrentPage: (page: number) => void;
   itemsPerPage: number;
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
 export default function ServiceTabs({
@@ -37,6 +40,8 @@ export default function ServiceTabs({
   currentPage = 1,
   setCurrentPage,
   itemsPerPage = 9,
+  isLoading = false,
+  error = null
 }: ServiceTabsProps) {
   
   // Función para paginar los servicios
@@ -56,6 +61,65 @@ export default function ServiceTabs({
       : codeEditorServices.length;
   
   const totalPages = Math.ceil(totalServices / itemsPerPage);
+  if (isLoading) {
+    return (
+      <div className="flex-1">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <button
+              className="md:hidden p-2 rounded-md border"
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+            >
+              <FilterIcon className="h-5 w-5" />
+            </button>
+            <h2 className="text-xl font-bold">
+              {locale === 'es' ? 'Servicios' : 'Services'}
+            </h2>
+          </div>
+        </div>
+        
+        <TabsSkeleton />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            <button
+              className="md:hidden p-2 rounded-md border"
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+            >
+              <FilterIcon className="h-5 w-5" />
+            </button>
+            <h2 className="text-xl font-bold">
+              {locale === 'es' ? 'Servicios' : 'Services'}
+            </h2>
+          </div>
+        </div>
+        
+        <div className="flex flex-col items-center justify-center p-12 text-center">
+          <div className="text-red-500 mb-4 text-4xl">⚠️</div>
+          <h3 className="text-xl font-bold mb-2">
+            {locale === 'es' ? 'Error al cargar servicios' : 'Error loading services'}
+          </h3>
+          <p className="text-muted-foreground mb-4">
+            {locale === 'es' 
+              ? 'Hubo un problema al cargar los servicios. Por favor, intenta nuevamente.' 
+              : 'There was a problem loading services. Please try again.'}
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            {locale === 'es' ? 'Reintentar' : 'Retry'}
+          </button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="flex-1">
       <div className="flex items-center justify-between mb-6">
@@ -89,17 +153,11 @@ export default function ServiceTabs({
         </TabsList>
 
         <TabsContent value="api" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {paginatedApiServices.length > 0 ? (
               paginatedApiServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
             ) : (
-              <div className="col-span-full text-center py-12">
-                <p className="text-muted-foreground">
-                  {locale === 'es' 
-                    ? 'No hay servicios que coincidan con tus filtros' 
-                    : 'No services match your filters'}
-                </p>
-              </div>
+              <ServiceGridSkeleton/>
             )}
           </div>
           
@@ -112,17 +170,11 @@ export default function ServiceTabs({
         </TabsContent>
 
         <TabsContent value="individual" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {paginatedIndividualServices.length > 0 ? (
               paginatedIndividualServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
             ) : (
-              <div className="col-span-full text-center py-12">
-                <p className="text-muted-foreground">
-                  {locale === 'es' 
-                    ? 'No hay servicios que coincidan con tus filtros' 
-                    : 'No services match your filters'}
-                </p>
-              </div>
+              <ServiceGridSkeleton/>
             )}
           </div>
           
@@ -135,17 +187,11 @@ export default function ServiceTabs({
         </TabsContent>
 
         <TabsContent value="code-editor" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {paginatedCodeEditorServices.length > 0 ? (
               paginatedCodeEditorServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
             ) : (
-              <div className="col-span-full text-center py-12">
-                <p className="text-muted-foreground">
-                  {locale === 'es' 
-                    ? 'No hay servicios que coincidan con tus filtros' 
-                    : 'No services match your filters'}
-                </p>
-              </div>
+              <ServiceGridSkeleton/>
             )}
           </div>
           
@@ -158,5 +204,8 @@ export default function ServiceTabs({
         </TabsContent>
       </Tabs>
     </div>
+
   );
+
+
 }

@@ -3,13 +3,14 @@ import type { AIService } from "@/data/ai-data";
 import FilterSidebar from "./pricing/FilterSidebar";
 import ServiceTabs from "./pricing/ServiceTabs";
 import { useTranslation, type SupportedLocale } from "../utils/i18n";
+import { useServices } from "../hooks/useServices";
 
 interface AIPricingHubProps {
-  services: AIService[];
+  initialServices?: AIService[];
   locale?: SupportedLocale;
 }
 
-export default function AIPricingHub({ services, locale = 'es' }: AIPricingHubProps) {
+export default function AIPricingHub({ initialServices = [], locale = 'es' }: AIPricingHubProps) {
   const { t } = useTranslation(locale);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeTab, setActiveTab] = useState("api");
@@ -20,12 +21,44 @@ export default function AIPricingHub({ services, locale = 'es' }: AIPricingHubPr
   const [releaseDate, setReleaseDate] = useState("Any");
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9; 
+  const itemsPerPage = 9;
   
-  // Resetear la página cuando cambia el tab o los filtros
+  const [initialLoad, setInitialLoad] = useState(true);
+  
+  const { services: fetchedServices, loading, error } = useServices({
+    type: activeTab !== "all" ? activeTab : undefined,
+    categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+    minRating: selectedRating > 0 ? selectedRating : undefined,
+    hasFree: selectedFeatures.includes("Free Tier"),
+    hasAPI: selectedFeatures.includes("API Access"),
+    commercialUse: selectedFeatures.includes("Commercial Use"),
+    customModels: selectedFeatures.includes("Custom Models"),
+    isNew: releaseDate === "New" ? true : undefined,
+    releaseYear: releaseDate === "This Year" 
+      ? new Date().getFullYear() 
+      : releaseDate === "Last Year" 
+        ? new Date().getFullYear() - 1 
+        : undefined,
+    skipInitialCall: initialServices.length > 0 
+  });
+
+  const services = initialLoad && initialServices.length > 0 ? initialServices : fetchedServices;
+
+  useEffect(() => {
+    if (loading === false && fetchedServices.length > 0) {
+      setInitialLoad(false);
+    }
+  }, [loading, fetchedServices]);
+  
+  const isLoadingServices = loading && services.length === 0;
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, selectedCategories, priceRange, selectedRating, releaseDate, selectedFeatures]);
+
+    if (!initialLoad) {
+      console.log("Filter changed, updating results");
+    }
+  }, [activeTab, selectedCategories, priceRange, selectedRating, releaseDate, selectedFeatures, initialLoad]);
 
   const allCategories = [...new Set(services.flatMap((service) => service.categories))];
 
@@ -53,63 +86,28 @@ export default function AIPricingHub({ services, locale = 'es' }: AIPricingHubPr
     }
   };
 
-  const filteredServices = services.filter((service) => {
-    // If no categories selected, skip category filter
-    if (
-      selectedCategories.length > 0 &&
-      !service.categories.some((category) => selectedCategories.includes(category))
-    ) {
-      return false;
-    }
+  const apiServices = services.filter((service) => service.type === "api");
+  const individualServices = services.filter((service) => service.type === "individual");
+  const codeEditorServices = services.filter((service) => service.type === "code-editor");
 
-    // Price filter - parse the price string to get a numeric value for comparison
-    const priceValue = Number.parseFloat(service.price.replace(/[^0-9.-]+/g, ""));
-    if (priceValue < priceRange[0] || priceValue > priceRange[1]) {
-      return false;
-    }
-
-    // Rating filter
-    if (selectedRating > 0 && service.rating < selectedRating) {
-      return false;
-    }
-
-    // Feature filters
-    if (selectedFeatures.includes("Free Tier") && !service.hasFree) {
-      return false;
-    }
-    if (selectedFeatures.includes("API Access") && !service.hasAPI) {
-      return false;
-    }
-    if (selectedFeatures.includes("Commercial Use") && !service.commercialUse) {
-      return false;
-    }
-    if (selectedFeatures.includes("Custom Models") && !service.customModels) {
-      return false;
-    }
-
-    // Release date filter
-    if (releaseDate !== "Any") {
-      const currentYear = new Date().getFullYear();
-      if (releaseDate === "New" && !service.isNew) {
-        return false;
-      }
-      if (releaseDate === "This Year" && service.releaseYear !== currentYear) {
-        return false;
-      }
-      if (releaseDate === "Last Year" && service.releaseYear !== currentYear - 1) {
-        return false;
+  useEffect(() => {
+    const component = document.querySelector('[data-component="AIPricingHub"]');
+    if (component) {
+      component.setAttribute('data-loaded', 'true');
+      const skeleton = document.getElementById('loading-skeleton');
+      if (skeleton) {
+        skeleton.style.display = 'none';
       }
     }
-
-    return true;
-  });
-
-  const apiServices = filteredServices.filter((service) => service.type === "api");
-  const individualServices = filteredServices.filter((service) => service.type === "individual");
-  const codeEditorServices = filteredServices.filter((service) => service.type === "code-editor");
+    // if (window.performance) {
+    //   const perfData = window.performance.timing;
+    //   const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
+    //   console.log(`Tiempo total de carga de la página: ${pageLoadTime}ms`);
+    // }
+  }, []);
 
   return (
-    <main className="container min-h-screen text-foreground transition-colors duration-300">
+    <main className="container min-h-screen text-foreground transition-colors duration-300" data-component="AIPricingHub">
     
     <section className="mb-12">
       <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
@@ -138,6 +136,7 @@ export default function AIPricingHub({ services, locale = 'es' }: AIPricingHubPr
         toggleFeature={toggleFeature}
         clearFilters={clearFilters}
         locale={locale}
+        isLoading={isLoadingServices}
       />
 
       <ServiceTabs 
@@ -154,9 +153,10 @@ export default function AIPricingHub({ services, locale = 'es' }: AIPricingHubPr
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
         itemsPerPage={itemsPerPage}
+        isLoading={isLoadingServices}
+        error={error}
       />
-    </div>
-    
+    </div>  
   </main>
   );
 }

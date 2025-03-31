@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { ChevronUp, ChevronDown, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type SupportedLocale } from "../../utils/i18n";
+import { FilterSidebarSkeleton } from "./SkeletonLoaders";
 
 interface FilterSidebarProps {
   isFilterOpen: boolean;
@@ -18,6 +19,7 @@ interface FilterSidebarProps {
   toggleFeature: (feature: string) => void;
   clearFilters: () => void;
   locale?: SupportedLocale;
+  isLoading?: boolean;
 }
 
 export default function FilterSidebar({
@@ -35,8 +37,17 @@ export default function FilterSidebar({
   toggleFeature,
   clearFilters,
   locale,
+  isLoading = false
 }: FilterSidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState(false);
+
+  if (isLoading) {
+    return (
+      <aside className={`${isFilterOpen ? 'block' : 'hidden'} md:block`}>
+        <FilterSidebarSkeleton />
+      </aside>
+    );
+  }
 
   return (
     <div
