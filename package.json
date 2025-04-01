@@ -36,6 +36,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.13.14",
     "@types/react-window": "^1.8.8",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "wrangler": "^4.6.0"
   }
 }
