@@ -3,15 +3,16 @@ import Layout from '../../../layouts/Layout.astro';
 import { getLocaleAndTranslations } from '../../../utils/i18n';
 import type { SupportedLocale } from '../../../utils/i18n';
 import { Star, ArrowLeft, Calendar, Check, X } from 'lucide-react';
-import { aiServices } from '../../../data/ai-data';
-// Obtener el locale
+import { getAIServices } from '@/lib/service';
+
 const locale = Astro.currentLocale || 'es';
 const typedLocale = (locale === 'es' || locale === 'en') ? locale as SupportedLocale : 'es' as SupportedLocale;
 const { t } = getLocaleAndTranslations(typedLocale);
 
 const { type, id } = Astro.params;
 
-let service = aiServices.find(service => service.id === id && service.type === type);
+const services = await getAIServices();
+let service = services.find(service => service.id === id && service.type === type);
 
 if (!service) {
   return Astro.redirect(`/${locale}/`);
@@ -185,7 +186,7 @@ const featureLabels = {
     <div class="mt-12">
       <h2 class="text-2xl font-bold mb-6">{typedLocale === 'es' ? 'Servicios relacionados' : 'Related Services'}</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {aiServices
+        {services
           .filter(s => s.id !== service.id && s.categories.some(cat => service.categories.includes(cat)))
           .slice(0, 3)
           .map(relatedService => (
