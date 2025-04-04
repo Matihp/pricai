@@ -1,0 +1,61 @@
+<!-- ---
+ 
+import { Button } from '@/components/ui/button';
+import type { SupportedLocale } from '../../utils/i18n';
+
+interface Props {
+  currentLocale: SupportedLocale;
+}
+
+const { currentLocale } = Astro.props;
+
+// Determinar la URL para el cambio de idioma
+const newLocale = currentLocale === 'es' ? 'en' : 'es';
+
+// Obtener la ruta actual
+const pathname = Astro.url.pathname;
+let newPath;
+
+// Manejar diferentes patrones de URL de manera más robusta
+if (pathname === '/' || pathname === '') {
+  // Si estamos en la raíz, simplemente añadir el nuevo idioma
+  newPath = `/${newLocale}`;
+} else if (pathname === '/es' || pathname === '/en') {
+  // Si estamos en la página principal de un idioma
+  newPath = `/${newLocale}`;
+} else {
+  // Para cualquier otra ruta
+  const segments = pathname.split('/').filter(Boolean);
+  
+  // Verificar si el primer segmento es un idioma
+  if (segments.length > 0 && (segments[0] === 'es' || segments[0] === 'en')) {
+    segments[0] = newLocale;
+    newPath = '/' + segments.join('/');
+  } else {
+    // Si no hay prefijo de idioma, añadirlo
+    newPath = `/${newLocale}${pathname}`;
+  }
+}
+
+// Asegurarse de que la URL no tenga dobles barras
+newPath = newPath.replace(/\/+/g, '/');
+
+// Add a client-side script to log when the link is clicked
+---
+
+<a href={newPath} class="inline-block" id="language-toggle">
+  <Button variant="outline" size="sm" className="cursor-pointer">
+    {currentLocale === 'es' ? 'EN' : 'ES'}
+  </Button>
+</a>
+
+<script>
+    // Client-side logging
+    document.getElementById('language-toggle')?.addEventListener('click', (e) => {
+      console.log('Language toggle clicked');
+      const target = e.currentTarget as HTMLAnchorElement;
+      if (target) {
+        console.log('Navigating to:', target.getAttribute('href'));
+      }
+    });
+  </script> -->

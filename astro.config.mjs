@@ -1,33 +1,27 @@
+// @ts-check
 import { defineConfig } from 'astro/config';
-import react from '@astrojs/react';
-import tailwindcss from '@tailwindcss/vite';
+
 import cloudflare from '@astrojs/cloudflare';
 
+import react from '@astrojs/react';
+import tailwindcss from '@tailwindcss/vite';
+
+// https://astro.build/config
 export default defineConfig({
-  integrations: [react()],
-  i18n: {
-    defaultLocale: 'es',
-    locales: ['es', 'en'],
-    routing: {
-      prefixDefaultLocale: true
-    },
-    fallback: {
-      en: 'es'
-    }
-  },
-  output: 'server',
   adapter: cloudflare({
-    imageService: 'passthrough',
     platformProxy: {
-      enabled: true,
+      enabled: true
     }
   }),
+  output: 'server',
+  integrations: [react()],
+  // @ts-ignore
   vite: {
-    plugins: [tailwindcss()]
-  },
-  image: {
-    service: {
-      entrypoint: 'passthrough'
+    plugins: [tailwindcss()],
+    resolve: {
+      alias: {
+        'react-dom/server': 'react-dom/server.edge', // 💡 Alias correcto para evitar CommonJS
+      }
     }
-  }
+  },
 });

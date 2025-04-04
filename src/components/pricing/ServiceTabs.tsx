@@ -6,7 +6,9 @@ import type { AIService } from "@/data/ai-data";
 import ServiceCard from "./ServiceCard";
 import { type SupportedLocale } from "../../utils/i18n";
 import PaginationControls from "./PaginationControls";
+import { useState, useEffect } from "react";
 import { ServiceGridSkeleton, TabsSkeleton } from "./SkeletonLoaders";
+export const prerender = false;
 
 interface ServiceTabsProps {
   isFilterOpen: boolean;
@@ -44,6 +46,33 @@ export default function ServiceTabs({
   error = null
 }: ServiceTabsProps) {
   
+  // Add state for transition
+  const [isTabChanging, setIsTabChanging] = useState(false);
+  const [visibleTab, setVisibleTab] = useState(activeTab);
+  
+  useEffect(() => {
+    if (activeTab !== visibleTab) {
+      setIsTabChanging(true);
+      const timer = setTimeout(() => {
+        setVisibleTab(activeTab);
+        setTimeout(() => {
+          setIsTabChanging(false);
+        }, 50);
+      }, 150);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, visibleTab]);
+  
+  // Custom tab change handler
+  const handleTabChange = (value: string) => {
+    if (value !== activeTab) {
+      setActiveTab(value);
+      // Reset to page 1 when changing tabs
+      setCurrentPage(1);
+    }
+  };
+  
   // Función para paginar los servicios
   const paginateServices = (services: AIService[]) => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -54,13 +83,14 @@ export default function ServiceTabs({
   const paginatedIndividualServices = paginateServices(individualServices);
   const paginatedCodeEditorServices = paginateServices(codeEditorServices);
   
-  const totalServices = activeTab === "api" 
+  const totalServices = visibleTab === "api" 
     ? apiServices.length 
-    : activeTab === "individual" 
+    : visibleTab === "individual" 
       ? individualServices.length 
       : codeEditorServices.length;
   
   const totalPages = Math.ceil(totalServices / itemsPerPage);
+  
   if (isLoading) {
     return (
       <div className="flex-1">
@@ -120,6 +150,7 @@ export default function ServiceTabs({
       </div>
     );
   }
+  
   return (
     <div className="flex-1">
       <div className="flex items-center justify-between mb-6">
@@ -145,67 +176,72 @@ export default function ServiceTabs({
         )}
       </div>
 
-      <Tabs defaultValue="api" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 mb-8 ">
+      <Tabs defaultValue="api" value={activeTab} onValueChange={handleTabChange}>
+        <TabsList className="grid w-full grid-cols-3 mb-8">
           <TabsTrigger className="cursor-pointer" value="api">{locale === 'es' ? 'Servicios API' : 'API Services'}</TabsTrigger>
           <TabsTrigger className="cursor-pointer" value="individual">{locale === 'es' ? 'Uso Individual' : 'Individual Use'}</TabsTrigger>
           <TabsTrigger className="cursor-pointer" value="code-editor">{locale === 'es' ? 'Editores de Código' : 'Code Editors'}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="api" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {paginatedApiServices.length > 0 ? (
-              paginatedApiServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
-            ) : (
-              <ServiceGridSkeleton/>
-            )}
-          </div>
-          
-          <PaginationControls 
-            currentPage={currentPage}
-            totalPages={totalPages}
-            setCurrentPage={setCurrentPage}
-            locale={locale}
-          />
-        </TabsContent>
+        <div className={`transition-opacity duration-200 ${isTabChanging ? 'opacity-0' : 'opacity-100'}`}>
+          {visibleTab === "api" && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {paginatedApiServices.length > 0 ? (
+                  paginatedApiServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
+                ) : (
+                  <ServiceGridSkeleton/>
+                )}
+              </div>
+              
+              <PaginationControls 
+                currentPage={currentPage}
+                totalPages={totalPages}
+                setCurrentPage={setCurrentPage}
+                locale={locale}
+              />
+            </div>
+          )}
 
-        <TabsContent value="individual" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {paginatedIndividualServices.length > 0 ? (
-              paginatedIndividualServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
-            ) : (
-              <ServiceGridSkeleton/>
-            )}
-          </div>
-          
-          <PaginationControls 
-            currentPage={currentPage}
-            totalPages={totalPages}
-            setCurrentPage={setCurrentPage}
-            locale={locale}
-          />
-        </TabsContent>
+          {visibleTab === "individual" && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {paginatedIndividualServices.length > 0 ? (
+                  paginatedIndividualServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
+                ) : (
+                  <ServiceGridSkeleton/>
+                )}
+              </div>
+              
+              <PaginationControls 
+                currentPage={currentPage}
+                totalPages={totalPages}
+                setCurrentPage={setCurrentPage}
+                locale={locale}
+              />
+            </div>
+          )}
 
-        <TabsContent value="code-editor" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {paginatedCodeEditorServices.length > 0 ? (
-              paginatedCodeEditorServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
-            ) : (
-              <ServiceGridSkeleton/>
-            )}
-          </div>
-          
-          <PaginationControls 
-            currentPage={currentPage}
-            totalPages={totalPages}
-            setCurrentPage={setCurrentPage}
-            locale={locale}
-          />
-        </TabsContent>
+          {visibleTab === "code-editor" && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {paginatedCodeEditorServices.length > 0 ? (
+                  paginatedCodeEditorServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
+                ) : (
+                  <ServiceGridSkeleton/>
+                )}
+              </div>
+              
+              <PaginationControls 
+                currentPage={currentPage}
+                totalPages={totalPages}
+                setCurrentPage={setCurrentPage}
+                locale={locale}
+              />
+            </div>
+          )}
+        </div>
       </Tabs>
     </div>
-
   );
-
-
 }

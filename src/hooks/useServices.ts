@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { AIService } from '@/data/ai-data';
+export const prerender = false;
 
 interface UseServicesOptions {
   type?: string;
@@ -113,7 +114,7 @@ export function useServices(options: UseServicesOptions = {}) {
         const url = `/api/services?${params.toString()}`;
 
         const response = await fetchWithRetry(url);
-        const data = await response.json();
+        const data: AIService[] = await response.json();
         
         if (response.headers.get('X-Error-Fallback') === 'true') {
           console.log('Using fallback data due to server error');

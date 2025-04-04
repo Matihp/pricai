@@ -3,6 +3,7 @@ import type { AIService } from "@/data/ai-data";
 import ServiceCard from "./ServiceCard";
 import { type SupportedLocale } from "../../utils/i18n";
 import { useEffect, useState } from 'react';
+export const prerender = false;
 
 interface VirtualizedServiceListProps {
   services: AIService[];

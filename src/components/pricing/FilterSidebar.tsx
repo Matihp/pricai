@@ -3,6 +3,7 @@ import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type SupportedLocale } from "../../utils/i18n";
 import { FilterSidebarSkeleton } from "./SkeletonLoaders";
+export const prerender = false;
 
 interface FilterSidebarProps {
   isFilterOpen: boolean;

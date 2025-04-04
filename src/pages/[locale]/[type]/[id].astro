@@ -3,7 +3,8 @@ import Layout from '../../../layouts/Layout.astro';
 import { getLocaleAndTranslations } from '../../../utils/i18n';
 import type { SupportedLocale } from '../../../utils/i18n';
 import { Star, ArrowLeft, Calendar, Check, X } from 'lucide-react';
-import { getAIServices } from '@/lib/service';
+import { getAIServices } from '@/lib/service'
+export const prerender = false;
 
 const locale = Astro.currentLocale || 'es';
 const typedLocale = (locale === 'es' || locale === 'en') ? locale as SupportedLocale : 'es' as SupportedLocale;

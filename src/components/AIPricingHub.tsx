@@ -4,6 +4,7 @@ import FilterSidebar from "./pricing/FilterSidebar";
 import ServiceTabs from "./pricing/ServiceTabs";
 import { useTranslation, type SupportedLocale } from "../utils/i18n";
 import { useServices } from "../hooks/useServices";
+export const prerender = false;
 
 interface AIPricingHubProps {
   initialServices?: AIService[];

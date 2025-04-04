@@ -15,18 +15,10 @@ const translations: Translations = {
     es: 'Inicio',
     en: 'Home'
   },
-  // 'nav.apiPricing': {
-  //   es: 'Precios de APIs',
-  //   en: 'API Pricing'
-  // },
-  // 'nav.individualPricing': {
-  //   es: 'Precios Individuales',
-  //   en: 'Individual Pricing'
-  // },
-  // 'nav.codeEditors': {
-  //   es: 'Editores de Código',
-  //   en: 'Code Editors'
-  // },
+  'nav.compare': {
+    es: 'Comparar IA',
+    en: 'Compare AI Tools'
+  },
   
   // Filters
   'filter.all': {

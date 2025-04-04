@@ -1,4 +1,5 @@
 import { Skeleton } from "../ui/skeleton";
+export const prerender = false;
 
 export function ServiceCardSkeleton() {
   return (

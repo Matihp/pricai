@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import type { AIService } from "@/data/ai-data";
 import { type SupportedLocale } from "../../utils/i18n";
+export const prerender = false;
 
 // Function to generate a color based on the service name
 const stringToColor = (str: string) => {
@@ -96,10 +97,14 @@ export default function ServiceCard({
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between border-t pt-4 pb-2">
+      <CardFooter className="flex justify-between lg:gap-2 border-t pt-4 pb-2">
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button className="cursor-pointer w-[45%] lg:w-[50%]"
+              style={{
+                height: "35px",
+              }} 
+              variant="outline">
               Características
             </Button>
           </DialogTrigger>
@@ -139,22 +144,29 @@ export default function ServiceCard({
             </div>
             <div className="flex justify-end">
               <Button
+                className="cursor-pointer"
+                variant="default"
                 onClick={() =>
                   (window.location.href = `/${locale}/${service.type}/${service.id}`)
                 }
               >
-                Ver detalles
+                Detalles
               </Button>
             </div>
           </DialogContent>
         </Dialog>
-        <Button
-          variant="default"
-          size="sm"
-          onClick={() => (window.location.href = `/${locale}/${service.type}/${service.id}`)}
-        >
-          Detalles
-        </Button>
+
+          <Button
+            className="cursor-pointer w-[45%] lg:w-[45%] "
+            style={{
+              height: "35px",
+            }}
+            variant="default"
+            onClick={() => (window.location.href = `/${locale}/${service.type}/${service.id}`)}
+          >
+            Detalles
+          </Button>          
+
       </CardFooter>
     </Card>
   );

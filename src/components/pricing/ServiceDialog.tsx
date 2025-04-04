@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import type { AIService } from "@/data/ai-data";
 import { type SupportedLocale } from "../../utils/i18n";
+export const prerender = false;
 
 interface ServiceDialogProps {
   service: AIService;
