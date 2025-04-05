@@ -1,0 +1,33 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getLocaleAndTranslations } from '../../utils/i18n';
+import type { SupportedLocale } from '../../utils/i18n';
+import CompareTable from '../../components/pricing/CompareTable';
+import { CompareProvider } from '../../contexts/CompareContext';
+import { ArrowLeft } from 'lucide-react';
+export const prerender = false;
+
+// Get locale from URL parameters
+const { locale: urlLocale } = Astro.params;
+const locale = (urlLocale === 'es' || urlLocale === 'en') ? urlLocale : 'es' as SupportedLocale;
+const { t } = getLocaleAndTranslations(locale);
+---
+
+<Layout 
+  title={`${t('compare.title')} - AI Pricing Hub`}
+  description={t('compare.description')}
+  locale={locale}
+>
+  <div class="container mx-auto px-4 py-8 max-w-7xl">
+    <a href={`/${locale}/`} class="inline-flex items-center text-primary hover:underline mb-6 transition-colors">
+      <ArrowLeft className="w-4 h-4 mr-2" />
+      {t('nav.backToHome')}
+    </a>
+    
+    <h1 class="text-3xl font-bold mb-6">{t('compare.title')}</h1>
+    
+    <CompareProvider client:load>
+      <CompareTable client:load locale={locale} />
+    </CompareProvider>
+  </div>
+</Layout>
