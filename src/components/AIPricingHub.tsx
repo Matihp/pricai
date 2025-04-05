@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import type { AIService } from "@/data/ai-data";
 import FilterSidebar from "./pricing/FilterSidebar";
 import ServiceTabs from "./pricing/ServiceTabs";
-import { useTranslation, type SupportedLocale } from "../utils/i18n";
+import { type SupportedLocale } from "../utils/i18n";
 import { useServices } from "../hooks/useServices";
 export const prerender = false;
 
@@ -12,8 +12,6 @@ interface AIPricingHubProps {
 }
 
 export default function AIPricingHub({ initialServices = [], locale = 'es' }: AIPricingHubProps) {
-  const { t } = useTranslation(locale);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeTab, setActiveTab] = useState("api");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
