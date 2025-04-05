@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { AIService } from "@/data/ai-data";
-import { type SupportedLocale } from "../../utils/i18n";
+import { getTranslation, type SupportedLocale } from "../../utils/i18n";
 export const prerender = false;
 
 interface ServiceDialogProps {
@@ -17,6 +17,7 @@ interface ServiceDialogProps {
 }
 
 export default function ServiceDialog({ service, locale = 'es' }: ServiceDialogProps) {
+  const t = getTranslation(locale);
 
   const description = typeof service.description === 'object' 
     ? service.description[locale] 
@@ -30,7 +31,7 @@ export default function ServiceDialog({ service, locale = 'es' }: ServiceDialogP
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          {locale === 'es' ? 'Vista previa' : 'Preview'}
+          {t("button.preview")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
@@ -40,12 +41,12 @@ export default function ServiceDialog({ service, locale = 'es' }: ServiceDialogP
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div>
-            <h4 className="font-medium mb-2">{locale === 'es' ? 'Precio' : 'Pricing'}</h4>
+            <h4 className="font-medium mb-2">{t("service.pricing")}</h4>
             <div className="text-2xl font-bold">{service.price}</div>
             <div className="text-sm text-muted-foreground">{service.priceDetails}</div>
           </div>
           <div>
-            <h4 className="font-medium mb-2">{locale === 'es' ? 'Características principales' : 'Key Features'}</h4>
+            <h4 className="font-medium mb-2">{t("service.keyFeatures")}</h4>
             <ul className="list-disc pl-5 space-y-1">
               {features.map((feature, index) => (
                 <li key={index} className="text-sm">
@@ -56,8 +57,8 @@ export default function ServiceDialog({ service, locale = 'es' }: ServiceDialogP
           </div>
         </div>
         <div className="flex justify-end">
-          <Button onClick={() => window.location.href = `/services/${service.id}`}>
-            {locale === 'es' ? 'Ver detalles completos' : 'View full details'}
+          <Button onClick={() => window.location.href = `/${locale}/${service.type}/${service.id}`}>
+            {t("button.viewFullDetails")}
           </Button>
         </div>
       </DialogContent>

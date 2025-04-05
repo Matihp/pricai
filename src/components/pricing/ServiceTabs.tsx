@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import type { AIService } from "@/data/ai-data";
 import ServiceCard from "./ServiceCard";
-import { type SupportedLocale } from "../../utils/i18n";
+import { getTranslation, type SupportedLocale } from "../../utils/i18n";
 import PaginationControls from "./PaginationControls";
 import { useState, useEffect } from "react";
 import { ServiceGridSkeleton, TabsSkeleton } from "./SkeletonLoaders";
@@ -45,6 +45,7 @@ export default function ServiceTabs({
   isLoading = false,
   error = null
 }: ServiceTabsProps) {
+  const t = getTranslation(locale);
   
   // Add state for transition
   const [isTabChanging, setIsTabChanging] = useState(false);
@@ -103,7 +104,7 @@ export default function ServiceTabs({
               <FilterIcon className="h-5 w-5" />
             </button>
             <h2 className="text-xl font-bold">
-              {locale === 'es' ? 'Servicios' : 'Services'}
+              {t("common.services")}
             </h2>
           </div>
         </div>
@@ -125,7 +126,7 @@ export default function ServiceTabs({
               <FilterIcon className="h-5 w-5" />
             </button>
             <h2 className="text-xl font-bold">
-              {locale === 'es' ? 'Servicios' : 'Services'}
+              {t("common.services")}
             </h2>
           </div>
         </div>
@@ -133,23 +134,28 @@ export default function ServiceTabs({
         <div className="flex flex-col items-center justify-center p-12 text-center">
           <div className="text-red-500 mb-4 text-4xl">⚠️</div>
           <h3 className="text-xl font-bold mb-2">
-            {locale === 'es' ? 'Error al cargar servicios' : 'Error loading services'}
+            {t("error.loadingServices")}
           </h3>
           <p className="text-muted-foreground mb-4">
-            {locale === 'es' 
-              ? 'Hubo un problema al cargar los servicios. Por favor, intenta nuevamente.' 
-              : 'There was a problem loading services. Please try again.'}
+            {t("error.tryAgain")}
           </p>
           <button 
             onClick={() => window.location.reload()} 
             className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
           >
-            {locale === 'es' ? 'Reintentar' : 'Retry'}
+            {t("button.retry")}
           </button>
         </div>
       </div>
     );
   }
+  
+  // Map service types to their translation keys
+  const serviceTypeTranslations = {
+    "api": t("serviceType.api"),
+    "individual": t("serviceType.individual"),
+    "code-editor": t("serviceType.codeEditor")
+  };
   
   return (
     <div className="flex-1">
@@ -160,7 +166,7 @@ export default function ServiceTabs({
           onClick={() => setIsFilterOpen(!isFilterOpen)}
         >
           <Filter className="h-4 w-4" />
-          {locale === 'es' ? 'Filtros' : 'Filters'}
+          {t("filter.title")}
           {isFilterOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
 
@@ -178,9 +184,9 @@ export default function ServiceTabs({
 
       <Tabs defaultValue="api" value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-3 mb-8">
-          <TabsTrigger className="cursor-pointer" value="api">{locale === 'es' ? 'Servicios API' : 'API Services'}</TabsTrigger>
-          <TabsTrigger className="cursor-pointer" value="individual">{locale === 'es' ? 'Uso Individual' : 'Individual Use'}</TabsTrigger>
-          <TabsTrigger className="cursor-pointer" value="code-editor">{locale === 'es' ? 'Editores de Código' : 'Code Editors'}</TabsTrigger>
+          <TabsTrigger className="cursor-pointer" value="api">{serviceTypeTranslations["api"]}</TabsTrigger>
+          <TabsTrigger className="cursor-pointer" value="individual">{serviceTypeTranslations["individual"]}</TabsTrigger>
+          <TabsTrigger className="cursor-pointer" value="code-editor">{serviceTypeTranslations["code-editor"]}</TabsTrigger>
         </TabsList>
 
         <div className={`transition-opacity duration-200 ${isTabChanging ? 'opacity-0' : 'opacity-100'}`}>

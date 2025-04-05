@@ -8,7 +8,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { type SupportedLocale } from "../../utils/i18n";
+import { type SupportedLocale, getTranslation } from "../../utils/i18n";
 import { cn } from "@/lib/utils";
 export const prerender = false;
 
@@ -25,6 +25,8 @@ export default function PaginationControls({
   setCurrentPage,
   locale = 'es'
 }: PaginationControlsProps) {
+  const t = getTranslation(locale);
+  
   if (totalPages <= 1) return null;
   
   const isFirstPage = currentPage === 1;
@@ -37,7 +39,7 @@ export default function PaginationControls({
           <PaginationPrevious 
             onClick={() => !isFirstPage && setCurrentPage(currentPage - 1)}
             className={cn(isFirstPage && "pointer-events-none opacity-50")}
-            aria-label={locale === 'es' ? 'Página anterior' : 'Previous page'}
+            aria-label={t("pagination.previous")}
           />
         </PaginationItem>
         
@@ -75,7 +77,7 @@ export default function PaginationControls({
           <PaginationNext 
             onClick={() => !isLastPage && setCurrentPage(currentPage + 1)}
             className={cn(isLastPage && "pointer-events-none opacity-50")}
-            aria-label={locale === 'es' ? 'Página siguiente' : 'Next page'}
+            aria-label={t("pagination.next")}
           />
         </PaginationItem>
       </PaginationContent>
