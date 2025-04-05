@@ -58,9 +58,9 @@ export default function ServiceCard({
   const logoColor = stringToColor(service.name);
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md flex flex-col h-full">
+    <Card className="overflow-hidden transition-all hover:shadow-md flex flex-col h-full relative">
       {service.isNew && (
-        <div className="bg-primary text-primary-foreground text-xs font-medium py-1 px-3 absolute right-0 top-4 rounded-l-md">
+        <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-medium py-1 px-3 rounded-bl-md z-10">
           {t("service.new")}
         </div>
       )}
