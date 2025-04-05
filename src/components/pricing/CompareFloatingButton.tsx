@@ -12,6 +12,14 @@ export default function CompareFloatingButton({ locale }: CompareFloatingButtonP
 
   if (compareList.length === 0) return null;
 
+  const createCompareUrl = () => {
+    const params = new URLSearchParams();
+    compareList.forEach(service => {
+      params.append('ids', `${service.type}:${service.id}`);
+    });
+    return `/${locale}/compare?${params.toString()}`;
+  };
+
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 items-end">
       <div className="bg-card rounded-lg shadow-lg border border-border p-4 flex flex-col gap-3 max-w-[300px]">
@@ -40,7 +48,7 @@ export default function CompareFloatingButton({ locale }: CompareFloatingButtonP
         </div>
         
         <Button 
-          onClick={() => window.location.href = `/${locale}/compare`}
+          onClick={() => window.location.href = createCompareUrl()}
           className="w-full"
           disabled={compareList.length < 2}
         >
