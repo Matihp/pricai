@@ -42,23 +42,43 @@ export const buttonTranslations: TranslationDictionary = {
     en: "Share",
   },
   "button.preview": {
-  es: "Vista previa",
-  en: "Preview"
-},
-"button.viewFullDetails": {
-  es: "Ver detalles completos",
-  en: "View full details"
-},
-"button.features": {
-  es: "Características",
-  en: "Features"
-},
-"button.details": {
-  es: "Detalles",
-  en: "Details"
-},
-"button.retry": {
-  es: "Reintentar",
-  en: "Retry",
-},
+    es: "Vista previa",
+    en: "Preview"
+  },
+  "button.viewFullDetails": {
+    es: "Ver detalles completos",
+    en: "View full details"
+  },
+  "button.features": {
+    es: "Características",
+    en: "Features"
+  },
+  "button.details": {
+    es: "Detalles",
+    en: "Details"
+  },
+  "button.retry": {
+    es: "Reintentar",
+    en: "Retry",
+  },
+  "button.addCompare": {
+    es: "Añadir a comparación",
+    en: "Add to comparison",
+  },
+  "button.removeCompare": {
+    es: "Quitar de comparación",
+    en: "Remove from comparison",
+  },
+  "button.viewComparison": {
+    es: "Ver comparación",
+    en: "View comparison",
+  },
+  "button.clearSelection": {
+    es: "Limpiar selección",
+    en: "Clear selection",
+  },
+  "button.backToHome": {
+    es: "Volver al inicio",
+    en: "Back to home",
+  },
 };

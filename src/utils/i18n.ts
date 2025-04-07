@@ -17,7 +17,7 @@ export function getTranslation(locale: SupportedLocale) {
 
 // Función para obtener traducciones específicas de un módulo
 export function getModuleTranslation(module: 'navigation' | 'service' | 'pricing' | 'meta' 
-  | 'common' | 'filters' | 'buttons' | 'error' | 'pagination' | 'serviceType'
+  | 'common' | 'filters' | 'buttons' | 'error' | 'pagination' | 'serviceType' | 'compare'
   , locale: SupportedLocale) {
   const moduleTranslations = getTranslationModule(module);
   

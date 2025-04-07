@@ -9,6 +9,7 @@ import { paginationTranslations } from './pagination';
 import { serviceTypeTranslations } from './serviceType';
 import { errorTranslations } from './error';
 import type { TranslationDictionary } from './types';
+import { compareTranslations } from './compare';
 
 // Combinar todas las traducciones
 export const translations: TranslationDictionary = {
@@ -21,12 +22,14 @@ export const translations: TranslationDictionary = {
   ...buttonTranslations,
   ...paginationTranslations,
   ...serviceTypeTranslations,
+  ...compareTranslations,
   ...errorTranslations,
 };
 
 // Función para obtener solo un conjunto específico de traducciones
 export function getTranslationModule(
-  module: 'navigation' | 'service' | 'pricing' | 'meta' | 'common' | 'filters' | 'buttons' | 'pagination' | 'serviceType' | 'error'
+  module: 'navigation' | 'service' | 'pricing' | 'meta' | 'common' | 'filters'
+   | 'buttons' | 'pagination' | 'serviceType' | 'error' | 'compare'
 ) {
   switch (module) {
     case 'navigation':
@@ -47,6 +50,8 @@ export function getTranslationModule(
       return paginationTranslations;
     case 'serviceType':
       return serviceTypeTranslations;
+    case 'compare':
+      return compareTranslations;
     case 'error':
       return errorTranslations;
   }

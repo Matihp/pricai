@@ -1,6 +1,10 @@
 import type { TranslationDictionary } from './types';
 
 export const serviceTranslations: TranslationDictionary = {
+  "service.name": {
+    es: "Nombre",
+    en: "Name",
+  },
   "service.keyFeatures": {
     es: "Características principales",
     en: "Key Features",
@@ -36,5 +40,21 @@ export const serviceTranslations: TranslationDictionary = {
   "service.pricing": {
   es: "Precio",
   en: "Pricing"
+  },
+  "service.rating": {
+    es: "Calificación",
+    en: "Rating",
+  },
+  "service.apiAccess": {
+    es: "Acceso a API",
+    en: "API access",
+  },
+  "service.commercialUse": {
+    es: "Uso comercial",
+    en: "Commercial use",
+  },
+  "service.customModels": {
+    es: "Modelos personalizados",
+    en: "Custom models",
   },
 };
