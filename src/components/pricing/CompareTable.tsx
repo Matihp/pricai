@@ -6,90 +6,48 @@ import { Check, X } from "lucide-react";
 import type { AIService } from "@/data/ai-data";
 
 interface CompareTableProps {
-    locale: SupportedLocale;
-  }
-  
-  export default function CompareTable({ locale }: CompareTableProps) {
-    const { compareList, removeFromCompare } = useCompareContext();
-    const [isClient, setIsClient] = useState(false);
-    const [localCompareList, setLocalCompareList] = useState<AIService[]>([]);
-    const t = getTranslation(locale);
-  
-    // Efecto para cargar datos directamente desde localStorage
-    useEffect(() => {
-      setIsClient(true);
-      
-      console.log("CompareTable mounted, checking localStorage");
-      
-      // Intentar cargar directamente desde localStorage como respaldo
-      try {
-        const savedList = localStorage.getItem('compareList');
-        console.log("Raw localStorage data:", savedList);
-        
-        if (savedList) {
-          const parsedList = JSON.parse(savedList);
-          console.log("Parsed localStorage data:", parsedList);
-          
-          if (Array.isArray(parsedList) && parsedList.length > 0) {
-            console.log("Setting localCompareList from localStorage:", parsedList.length, "items");
-            setLocalCompareList(parsedList);
-          }
-        }
-      } catch (error) {
-        console.error("Error loading from localStorage:", error);
-      }
-    }, []);
-  
-    // Actualizar la lista local cuando el contexto cambie
-    useEffect(() => {
-      console.log("Context compareList changed:", compareList);
-      if (compareList.length > 0) {
-        console.log("Setting localCompareList from context:", compareList.length, "items");
-        setLocalCompareList(compareList);
-      }
-    }, [compareList]);
-    
-    // Log para depuración
-    useEffect(() => {
-      console.log("Current state - isClient:", isClient);
-      console.log("Current state - localCompareList:", localCompareList);
-      console.log("Current state - compareList from context:", compareList);
-    }, [isClient, localCompareList, compareList]);
-  
-    // Mostrar spinner mientras carga
-    if (!isClient) {
-      return (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      );
-    }
-  
-    // Usar la lista local que puede venir del contexto o directamente de localStorage
-    const displayList = localCompareList.length > 0 ? localCompareList : compareList;
-    console.log("Final displayList used for rendering:", displayList);
-  
-    if (displayList.length === 0) {
-      console.log("No services to compare, showing empty state");
-      return (
-        <div className="bg-card rounded-xl shadow-sm p-8 border border-border text-center">
-          <h2 className="text-xl font-semibold mb-4">{t("compare.noServices")}</h2>
-          <p className="text-muted-foreground mb-6">{t("compare.addServices")}</p>
-          <Button onClick={() => window.location.href = `/${locale}/`}>
-            {t("nav.backToHome")}
-          </Button>
-        </div>
-      );
-    }
+  locale: SupportedLocale;
+  initialServices?: AIService[];
+}
 
-    console.log("Rendering comparison table with", displayList.length, "services");
+export default function CompareTable({ locale, initialServices = [] }: CompareTableProps) {
+  const { compareList, removeFromCompare } = useCompareContext();
+  const [isClient, setIsClient] = useState(false);
+  const t = getTranslation(locale);
+
+  const displayList = initialServices.length > 0 ? initialServices : compareList;
+
+  useEffect(() => {
+    setIsClient(true);
+  }, [initialServices]);
+
+  // Mostrar spinner mientras carga
+  if (!isClient) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (displayList.length === 0) {
+    return (
+      <div className="bg-card rounded-xl shadow-sm p-8 border border-border text-center">
+        <h2 className="text-xl font-semibold mb-4">{t("compare.noServices")}</h2>
+        <p className="text-muted-foreground mb-6">{t("compare.addServices")}</p>
+        <Button onClick={() => window.location.href = `/${locale}/`}>
+          {t("nav.backToHome")}
+        </Button>
+      </div>
+    );
+  }
 
   // Definir las características a comparar
   const comparisonFeatures = [
     { id: "price", label: t("service.pricing") },
     { id: "rating", label: t("service.rating") },
     { id: "releaseYear", label: t("service.releaseYear") },
-    { id: "hasFree", label: t("service.freeTier") },
+    { id: "hasFree", label: t("pricing.tier.free") },
     { id: "hasAPI", label: t("service.apiAccess") },
     { id: "commercialUse", label: t("service.commercialUse") },
     { id: "customModels", label: t("service.customModels") },
@@ -107,7 +65,7 @@ interface CompareTableProps {
         );
       case "rating":
         return (
-          <div className="flex items-center">
+          <div className="flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-yellow-400 mr-1">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
             </svg>
@@ -121,9 +79,9 @@ interface CompareTableProps {
       case "commercialUse":
       case "customModels":
         return service[featureId] ? (
-          <Check className="h-5 w-5 text-green-500" />
+          <Check className="h-5 w-5 text-green-500 mx-auto" />
         ) : (
-          <X className="h-5 w-5 text-red-500" />
+          <X className="h-5 w-5 text-red-500 mx-auto" />
         );
       case "features":
         const features = Array.isArray(service.features)
@@ -153,7 +111,7 @@ interface CompareTableProps {
           <thead>
             <tr className="bg-muted/50">
               <th className="p-4 text-left font-medium text-muted-foreground w-[200px]">
-                {t("compare.features")}
+                {t("service.name")}
               </th>
               {displayList.map((service) => (
                 <th key={service.id} className="p-4 min-w-[250px]">
@@ -161,14 +119,26 @@ interface CompareTableProps {
                     <div className="flex justify-between items-center w-full mb-2">
                       <h3 className="font-bold text-lg">{service.name}</h3>
                       <button
-                        onClick={() => removeFromCompare(service.id)}
+                        onClick={() => {
+                          // For URL-based services, redirect to a new URL without this service
+                          if (initialServices.length > 0) {
+                            const newServices = displayList.filter(s => s.id !== service.id);
+                            const params = new URLSearchParams();
+                            newServices.forEach(s => {
+                              params.append('ids', `${s.type}:${s.id}`);
+                            });
+                            window.location.href = `/${locale}/compare?${params.toString()}`;
+                          } else {
+                            removeFromCompare(service.id);
+                          }
+                        }}
                         className="text-muted-foreground hover:text-foreground transition-colors"
                         aria-label={t("compare.remove")}
                       >
                         <X className="h-4 w-4" />
                       </button>
                     </div>
-                    <div className="flex gap-1 flex-wrap justify-center">
+                    {/* <div className="flex gap-1 flex-wrap justify-center">
                       {service.categories.slice(0, 2).map((category) => (
                         <span
                           key={category}
@@ -182,7 +152,7 @@ interface CompareTableProps {
                           +{service.categories.length - 2}
                         </span>
                       )}
-                    </div>
+                    </div> */}
                   </div>
                 </th>
               ))}
@@ -202,7 +172,7 @@ interface CompareTableProps {
                     key={`${service.id}-${feature.id}`}
                     className="p-4 text-center border-t border-border"
                   >
-                    {renderFeatureValue(service, feature.id)}
+                    {renderFeatureValue(service, feature.id)} 
                   </td>
                 ))}
               </tr>
@@ -215,9 +185,6 @@ interface CompareTableProps {
         <span className="text-sm text-muted-foreground">
           {displayList.length} {t("compare.servicesCompared")}
         </span>
-        <Button onClick={() => window.location.href = `/${locale}/`}>
-          {t("nav.backToHome")}
-        </Button>
       </div>
     </div>
   );
