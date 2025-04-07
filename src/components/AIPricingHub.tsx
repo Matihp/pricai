@@ -4,6 +4,8 @@ import FilterSidebar from "./pricing/FilterSidebar";
 import ServiceTabs from "./pricing/ServiceTabs";
 import { type SupportedLocale } from "../utils/i18n";
 import { useServices } from "../hooks/useServices";
+import { CompareProvider } from "../contexts/CompareContext";
+import CompareFloatingButton from "./pricing/CompareFloatingButton";
 export const prerender = false;
 
 interface AIPricingHubProps {
@@ -98,15 +100,11 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
         skeleton.style.display = 'none';
       }
     }
-    // if (window.performance) {
-    //   const perfData = window.performance.timing;
-    //   const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
-    //   console.log(`Tiempo total de carga de la página: ${pageLoadTime}ms`);
-    // }
   }, []);
 
   return (
-    <main className="container min-h-screen text-foreground transition-colors duration-300" data-component="AIPricingHub">
+    <CompareProvider>
+      <main className="container min-h-screen text-foreground transition-colors duration-300" data-component="AIPricingHub">
     
     <section className="mb-12">
       <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
@@ -155,7 +153,10 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
         isLoading={isLoadingServices}
         error={error}
       />
-    </div>  
-  </main>
+    </div>
+    
+    <CompareFloatingButton locale={locale} />
+      </main>
+    </CompareProvider>
   );
 }

@@ -1,4 +1,4 @@
-import { Star } from "lucide-react";
+import { Plus, SquarePlus, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,9 +19,9 @@ import {
 } from "@/components/ui/dialog";
 import type { AIService } from "@/data/ai-data";
 import { type SupportedLocale, getTranslation } from "../../utils/i18n";
+import { useCompareContext } from "@/contexts/CompareContext";
 export const prerender = false;
 
-// Function to generate a color based on the service name
 const stringToColor = (str: string) => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -45,6 +45,8 @@ export default function ServiceCard({
   locale = "es",
 }: ServiceCardProps) {
   const t = getTranslation(locale);
+  const { addToCompare, removeFromCompare, isInCompareList } = useCompareContext();
+  const isCompared = isInCompareList(service.id);
   
   const description =
     typeof service.description === "object"
@@ -158,17 +160,37 @@ export default function ServiceCard({
           </DialogContent>
         </Dialog>
 
-        <Button
-          className="cursor-pointer w-[45%] lg:w-[45%] "
-          style={{
-            height: "35px",
-          }}
-          variant="default"
-          onClick={() => (window.location.href = `/${locale}/${service.type}/${service.id}`)}
-        >
-          {t("button.details")}
-        </Button>          
-
+        <div className="flex gap-2 w-[45%] lg:w-[45%]">
+          <Button
+            className="cursor-pointer flex-1"
+            style={{
+              height: "35px",
+            }}
+            variant="default"
+            onClick={() => (window.location.href = `/${locale}/${service.type}/${service.id}`)}
+          >
+            {t("button.details")}
+          </Button>
+          
+          <Button
+            className="cursor-pointer w-9 h-[35px] p-0 flex items-center justify-center"
+            variant={isCompared ? "destructive" : "outline"}
+            onClick={(e) => {
+              e.preventDefault();
+              isCompared ? removeFromCompare(service.id) : addToCompare(service);
+            }}
+            title={isCompared ? t("button.removeCompare") : t("button.addCompare")}
+          >
+            {isCompared ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            ) : (
+              <Plus strokeWidth={3}/>
+            )}
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

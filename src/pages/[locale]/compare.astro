@@ -3,14 +3,24 @@ import Layout from '../../layouts/Layout.astro';
 import { getLocaleAndTranslations } from '../../utils/i18n';
 import type { SupportedLocale } from '../../utils/i18n';
 import CompareTable from '../../components/pricing/CompareTable';
-import { CompareProvider } from '../../contexts/CompareContext';
 import { ArrowLeft } from 'lucide-react';
+import { getAIServices } from '@/lib/service';
+import type { AIService } from '@/data/ai-data';
 export const prerender = false;
 
 // Get locale from URL parameters
 const { locale: urlLocale } = Astro.params;
 const locale = (urlLocale === 'es' || urlLocale === 'en') ? urlLocale : 'es' as SupportedLocale;
 const { t } = getLocaleAndTranslations(locale);
+
+const serviceIds = Astro.url.searchParams.getAll('ids');
+
+const allServices = await getAIServices();
+
+const servicesToCompare = serviceIds.map(param => {
+  const [type, id] = param.split(':');
+  return allServices.find(service => service.id === id && service.type === type);
+}).filter(Boolean) as AIService[]; // Añadimos una aserción de tipo explícita
 ---
 
 <Layout 
@@ -26,8 +36,6 @@ const { t } = getLocaleAndTranslations(locale);
     
     <h1 class="text-3xl font-bold mb-6">{t('compare.title')}</h1>
     
-    <CompareProvider client:load>
-      <CompareTable client:load locale={locale} />
-    </CompareProvider>
+    <CompareTable client:load locale={locale} initialServices={servicesToCompare} />
   </div>
 </Layout>
