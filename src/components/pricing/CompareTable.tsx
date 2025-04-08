@@ -11,7 +11,7 @@ interface CompareTableProps {
 }
 
 export default function CompareTable({ locale, initialServices = [] }: CompareTableProps) {
-  const { compareList, removeFromCompare } = useCompareContext();
+  const { compareList, removeFromCompare, clearCompareList } = useCompareContext();
   const [isClient, setIsClient] = useState(false);
   const t = getTranslation(locale);
 
@@ -19,7 +19,32 @@ export default function CompareTable({ locale, initialServices = [] }: CompareTa
 
   useEffect(() => {
     setIsClient(true);
+    // Si estamos usando URL params, inicializar la lista desde ahí 
+    if (initialServices.length > 0 && typeof window !== 'undefined') {
+      // Actualizar localStorage directamente para mantener sincronizado
+      localStorage.setItem('compareList', JSON.stringify(initialServices));
+    }
   }, [initialServices]);
+
+  const handleRemoveService = (serviceId: string) => {
+    // Eliminar del contexto
+    removeFromCompare(serviceId);
+    
+    if (initialServices.length > 0) {
+      const newServices = displayList.filter(s => s.id !== serviceId);
+      
+      // También actualizar localStorage directamente para mantener sincronizado
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('compareList', JSON.stringify(newServices));
+      }
+
+      const params = new URLSearchParams();
+      newServices.forEach(s => {
+        params.append('ids', `${s.type}:${s.id}`);
+      });
+      window.location.href = `/${locale}/compare?${params.toString()}`;
+    }
+  };
 
   // Mostrar spinner mientras carga
   if (!isClient) {
@@ -42,7 +67,6 @@ export default function CompareTable({ locale, initialServices = [] }: CompareTa
     );
   }
 
-  // Definir las características a comparar
   const comparisonFeatures = [
     { id: "price", label: t("service.pricing") },
     { id: "rating", label: t("service.rating") },
@@ -119,19 +143,7 @@ export default function CompareTable({ locale, initialServices = [] }: CompareTa
                     <div className="flex justify-between items-center w-full mb-2">
                       <h3 className="font-bold text-lg">{service.name}</h3>
                       <button
-                        onClick={() => {
-                          // For URL-based services, redirect to a new URL without this service
-                          if (initialServices.length > 0) {
-                            const newServices = displayList.filter(s => s.id !== service.id);
-                            const params = new URLSearchParams();
-                            newServices.forEach(s => {
-                              params.append('ids', `${s.type}:${s.id}`);
-                            });
-                            window.location.href = `/${locale}/compare?${params.toString()}`;
-                          } else {
-                            removeFromCompare(service.id);
-                          }
-                        }}
+                        onClick={() => handleRemoveService(service.id)}
                         className="text-muted-foreground hover:text-foreground transition-colors"
                         aria-label={t("compare.remove")}
                       >
@@ -185,6 +197,17 @@ export default function CompareTable({ locale, initialServices = [] }: CompareTa
         <span className="text-sm text-muted-foreground">
           {displayList.length} {t("compare.servicesCompared")}
         </span>
+        <Button 
+          onClick={() => {
+            // Limpiar localStorage antes de volver al inicio
+            if (typeof window !== 'undefined') {
+              clearCompareList();
+            }
+            window.location.href = `/${locale}/`;
+          }}
+        >
+          {t("nav.backToHome")}
+        </Button>
       </div>
     </div>
   );
