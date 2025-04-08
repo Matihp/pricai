@@ -66,13 +66,14 @@ export default function FilterSidebar({
   };
 
   return (
+    <>
     <div
-      className={`md:w-64 shrink-0 transition-all duration-300 ${
-        isFilterOpen ? "max-h-[800px]" : "max-h-0 md:max-h-[800px] overflow-hidden md:overflow-visible"
-      }`}
-    >
-      <div className="bg-card rounded-lg p-5 border shadow-sm">
-        <div className="flex items-center justify-between mb-6">
+    className={`md:w-64 shrink-0 transition-all duration-300 ${
+      isFilterOpen ? "max-h-[800px]" : "max-h-0 md:max-h-[800px] overflow-hidden md:overflow-visible"
+    }`}
+  >
+    <div className="bg-card rounded-lg p-5 border shadow-sm">
+        <div className="flex items-center justify-between">
           <h3 className="font-semibold text-lg">{t("filter.title")}</h3>
           {selectedCategories.length > 0 || priceRange[1] < 500 || selectedRating > 0 ? (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs font-medium">
@@ -257,5 +258,7 @@ export default function FilterSidebar({
         </div>
       </div>
     </div>
+    {isFilterOpen && <div className="h-18 md:hidden"></div>}
+    </>
   );
 }

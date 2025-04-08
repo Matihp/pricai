@@ -29,7 +29,7 @@ export default function CompareFloatingButton({ locale }: CompareFloatingButtonP
           </h3>
           <button 
             onClick={clearCompareList}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             aria-label={t("compare.clear")}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -49,7 +49,7 @@ export default function CompareFloatingButton({ locale }: CompareFloatingButtonP
         
         <Button 
           onClick={() => window.location.href = createCompareUrl()}
-          className="w-full"
+          className="w-full cursor-pointer"
           disabled={compareList.length < 2}
         >
           {t("compare.viewComparison")}
