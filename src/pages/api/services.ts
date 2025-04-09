@@ -2,19 +2,19 @@ import type { APIRoute } from 'astro';
 import type { AIService } from '@/data/ai-data';
 import { getAIServices } from '../../lib/service';
 
-const cache = new Map<string, { data: AIService[], timestamp: number }>();
-const CACHE_TTL = 60 * 1000; // 1 minute
+const cache = new Map<string, { data: AIService[], total: number, timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; 
 
 const MAX_RETRIES = 2;
-const RETRY_DELAY = 1000; // 1 second
+const RETRY_DELAY = 1000; // 1 segundo
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchServicesWithRetry(
   queryString: string, 
-  fetchFn: () => Promise<AIService[]>, 
+  fetchFn: () => Promise<{services: AIService[], total: number}>, 
   retries = MAX_RETRIES
-): Promise<AIService[]> {
+): Promise<{services: AIService[], total: number}> {
   try {
     return await fetchFn();
   } catch (error) {
@@ -36,11 +36,14 @@ export const GET: APIRoute = async ({ request }) => {
   
   if (cachedResult && now - cachedResult.timestamp < CACHE_TTL) {
     console.log('Cache hit for API query:', queryString);
-    return new Response(JSON.stringify(cachedResult.data), {
+    return new Response(JSON.stringify({
+      services: cachedResult.data,
+      total: cachedResult.total
+    }), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=60'
+        'Cache-Control': 'public, max-age=300' // 5 minutos
       }
     });
   }
@@ -55,60 +58,44 @@ export const GET: APIRoute = async ({ request }) => {
   const isNew = url.searchParams.get('isNew');
   const releaseYear = url.searchParams.get('releaseYear');
   
+  const page = url.searchParams.get('page') ? parseInt(url.searchParams.get('page')!) : 1;
+  const limit = url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : 9;
+  
   try {
-    
-    const services = await fetchServicesWithRetry(queryString, async () => {
+    const result = await fetchServicesWithRetry(queryString, async () => {
+      const result = await getAIServices(
+        type ?? undefined,
+        page,
+        limit,
+        {
+          categories: categories.length > 0 ? categories : undefined,
+          minRating: minRating ? parseFloat(minRating) : undefined,
+          hasFree: hasFree === 'true',
+          hasAPI: hasAPI === 'true',
+          commercialUse: commercialUse === 'true',
+          customModels: customModels === 'true',
+          isNew: isNew === 'true',
+          releaseYear: releaseYear ? parseInt(releaseYear) : undefined
+        }
+      );
+      
+      return result;
+    });
 
-      const allServices = await getAIServices(type ?? undefined);
-      
-      let filteredServices = [...allServices];
-      
-      if (categories.length > 0) {
-        filteredServices = filteredServices.filter(service => 
-          categories.some(cat => service.categories.includes(cat))
-        );
-      }
-      
-      if (minRating) {
-        const rating = parseFloat(minRating);
-        filteredServices = filteredServices.filter(service => service.rating >= rating);
-      }
-      
-      if (hasFree === 'true') {
-        filteredServices = filteredServices.filter(service => service.hasFree);
-      }
-      
-      if (hasAPI === 'true') {
-        filteredServices = filteredServices.filter(service => service.hasAPI);
-      }
-      
-      if (commercialUse === 'true') {
-        filteredServices = filteredServices.filter(service => service.commercialUse);
-      }
-      
-      if (customModels === 'true') {
-        filteredServices = filteredServices.filter(service => service.customModels);
-      }
-      
-      if (isNew === 'true') {
-        filteredServices = filteredServices.filter(service => service.isNew);
-      }
-      
-      if (releaseYear) {
-        const year = parseInt(releaseYear);
-        filteredServices = filteredServices.filter(service => service.releaseYear === year);
-      }
-      
-      return filteredServices;
+    cache.set(queryString, { 
+      data: result.services, 
+      total: result.total,
+      timestamp: now 
     });
     
-    cache.set(queryString, { data: services, timestamp: now });
-    
-    return new Response(JSON.stringify(services), {
+    return new Response(JSON.stringify({
+      services: result.services,
+      total: result.total
+    }), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=60'
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=600'
       }
     });
   } catch (error) {
@@ -118,7 +105,10 @@ export const GET: APIRoute = async ({ request }) => {
     
     if (fallbackData) {
       console.log('Using fallback data from cache');
-      return new Response(JSON.stringify(fallbackData.data), {
+      return new Response(JSON.stringify({
+        services: fallbackData.data,
+        total: fallbackData.total
+      }), {
         status: 200,
         headers: {
           'Content-Type': 'application/json',

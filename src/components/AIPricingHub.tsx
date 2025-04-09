@@ -23,10 +23,11 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
+  const [totalItems, setTotalItems] = useState(0);
   
   const [initialLoad, setInitialLoad] = useState(true);
   
-  const { services: fetchedServices, loading, error } = useServices({
+  const { services: fetchedServices, loading, error, total } = useServices({
     type: activeTab !== "all" ? activeTab : undefined,
     categories: selectedCategories.length > 0 ? selectedCategories : undefined,
     minRating: selectedRating > 0 ? selectedRating : undefined,
@@ -40,6 +41,8 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
       : releaseDate === "Last Year" 
         ? new Date().getFullYear() - 1 
         : undefined,
+    page: currentPage,
+    limit: itemsPerPage,
     skipInitialCall: initialServices.length > 0 
   });
 
@@ -49,7 +52,11 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
     if (loading === false && fetchedServices.length > 0) {
       setInitialLoad(false);
     }
-  }, [loading, fetchedServices]);
+    
+    if (total !== undefined) {
+      setTotalItems(total);
+    }
+  }, [loading, fetchedServices, total]);
   
   const isLoadingServices = loading && services.length === 0;
 
@@ -136,7 +143,7 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
         isLoading={isLoadingServices}
       />
 
-      <ServiceTabs 
+<ServiceTabs 
         isFilterOpen={isFilterOpen}
         setIsFilterOpen={setIsFilterOpen}
         selectedCategories={selectedCategories}
@@ -150,6 +157,7 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
         itemsPerPage={itemsPerPage}
+        totalItems={totalItems}
         isLoading={isLoadingServices}
         error={error}
       />

@@ -12,6 +12,8 @@ interface UseServicesOptions {
   customModels?: boolean;
   isNew?: boolean;
   releaseYear?: number;
+  page?: number;
+  limit?: number;
   skipInitialCall?: boolean;
 }
 
@@ -24,6 +26,7 @@ export function useServices(options: UseServicesOptions = {}) {
   const [services, setServices] = useState<AIService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [total, setTotal] = useState(0);
   const previousOptionsRef = useRef<string>('');
   const initialLoadRef = useRef<boolean>(true);
   const retryCountRef = useRef<number>(0);
@@ -111,16 +114,33 @@ export function useServices(options: UseServicesOptions = {}) {
           params.append('releaseYear', options.releaseYear.toString());
         }
         
+        // Añadir parámetros de paginación
+        if (options.page) {
+          params.append('page', options.page.toString());
+        }
+        
+        if (options.limit) {
+          params.append('limit', options.limit.toString());
+        }
+        
         const url = `/api/services?${params.toString()}`;
 
         const response = await fetchWithRetry(url);
-        const data: AIService[] = await response.json();
+        const data = await response.json();
         
         if (response.headers.get('X-Error-Fallback') === 'true') {
           console.log('Using fallback data due to server error');
         }
         
-        setServices(data);
+        // Add type assertion to handle the unknown type
+        if (data && typeof data === 'object' && 'services' in data && Array.isArray((data as any).services)) {
+          setServices((data as {services: AIService[], total: number}).services);
+          setTotal((data as {services: AIService[], total: number}).total || 0);
+        } else {
+          // Mantener compatibilidad con el formato anterior
+          setServices(Array.isArray(data) ? (data as AIService[]) : []);
+          setTotal(Array.isArray(data) ? (data as AIService[]).length : 0);
+        }
       } catch (err) {
         console.error('Error fetching services:', err);
         setError(err instanceof Error ? err : new Error('Error desconocido'));
@@ -145,8 +165,10 @@ export function useServices(options: UseServicesOptions = {}) {
     options.customModels,
     options.isNew,
     options.releaseYear,
+    options.page,
+    options.limit,
     options.skipInitialCall
   ]);
   
-  return { services, loading, error, retryCount: retryCountRef.current };
+  return { services, loading, error, total, retryCount: retryCountRef.current };
 }
