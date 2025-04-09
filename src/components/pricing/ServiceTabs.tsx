@@ -1,7 +1,13 @@
-import { Filter, X, ChevronDown, ChevronUp, FilterIcon } from "lucide-react";
+import { Filter, X, ChevronDown, ChevronUp, FilterIcon, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import type { AIService } from "@/data/ai-data";
 import ServiceCard from "./ServiceCard";
 import { getTranslation, type SupportedLocale } from "../../utils/i18n";
@@ -24,6 +30,7 @@ interface ServiceTabsProps {
   currentPage: number;
   setCurrentPage: (page: number) => void;
   itemsPerPage: number;
+  totalItems?: number;
   isLoading?: boolean;
   error?: Error | null;
 }
@@ -40,6 +47,7 @@ export default function ServiceTabs({
   codeEditorServices,
   locale = 'es',
   currentPage = 1,
+  totalItems = 0,
   setCurrentPage,
   itemsPerPage = 9,
   isLoading = false,
@@ -47,7 +55,6 @@ export default function ServiceTabs({
 }: ServiceTabsProps) {
   const t = getTranslation(locale);
   
-  // Add state for transition
   const [isTabChanging, setIsTabChanging] = useState(false);
   const [visibleTab, setVisibleTab] = useState(activeTab);
   
@@ -65,32 +72,22 @@ export default function ServiceTabs({
     }
   }, [activeTab, visibleTab]);
   
-  // Custom tab change handler
   const handleTabChange = (value: string) => {
     if (value !== activeTab) {
       setActiveTab(value);
-      // Reset to page 1 when changing tabs
       setCurrentPage(1);
     }
   };
   
-  // Función para paginar los servicios
   const paginateServices = (services: AIService[]) => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return services.slice(startIndex, startIndex + itemsPerPage);
+    return services;
   };
 
   const paginatedApiServices = paginateServices(apiServices);
   const paginatedIndividualServices = paginateServices(individualServices);
   const paginatedCodeEditorServices = paginateServices(codeEditorServices);
   
-  const totalServices = visibleTab === "api" 
-    ? apiServices.length 
-    : visibleTab === "individual" 
-      ? individualServices.length 
-      : codeEditorServices.length;
-  
-  const totalPages = Math.ceil(totalServices / itemsPerPage);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
   
   if (isLoading) {
     return (
@@ -150,12 +147,17 @@ export default function ServiceTabs({
     );
   }
   
-  // Map service types to their translation keys
   const serviceTypeTranslations = {
     "api": t("serviceType.api"),
     "individual": t("serviceType.individual"),
     "code-editor": t("serviceType.codeEditor")
   };
+  
+  const tabs = [
+    { id: "api", label: serviceTypeTranslations["api"] },
+    { id: "individual", label: serviceTypeTranslations["individual"] },
+    { id: "code-editor", label: serviceTypeTranslations["code-editor"] }
+  ];
   
   return (
     <div className="flex-1">
@@ -182,72 +184,99 @@ export default function ServiceTabs({
         )}
       </div>
 
-      <Tabs defaultValue="api" value={activeTab} onValueChange={handleTabChange}>
+      {/* Mobile Dropdown Menu */}
+      <div className="md:hidden w-full mb-6">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full justify-between">
+              <div className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                {tabs.find((tab) => tab.id === activeTab)?.label || t("common.selectCategory")}
+              </div>
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-[200px]">
+            {tabs.map((tab) => (
+              <DropdownMenuItem
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={activeTab === tab.id ? "bg-secondary" : ""}
+              >
+                {tab.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Desktop Tabs - Hidden on Mobile */}
+      <Tabs defaultValue="api" value={activeTab} onValueChange={handleTabChange} className="hidden md:block">
         <TabsList className="grid w-full grid-cols-3 mb-8">
           <TabsTrigger className="cursor-pointer" value="api">{serviceTypeTranslations["api"]}</TabsTrigger>
           <TabsTrigger className="cursor-pointer" value="individual">{serviceTypeTranslations["individual"]}</TabsTrigger>
           <TabsTrigger className="cursor-pointer" value="code-editor">{serviceTypeTranslations["code-editor"]}</TabsTrigger>
         </TabsList>
-
-        <div className={`transition-opacity duration-200 ${isTabChanging ? 'opacity-0' : 'opacity-100'}`}>
-          {visibleTab === "api" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {paginatedApiServices.length > 0 ? (
-                  paginatedApiServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
-                ) : (
-                  <ServiceGridSkeleton/>
-                )}
-              </div>
-              
-              <PaginationControls 
-                currentPage={currentPage}
-                totalPages={totalPages}
-                setCurrentPage={setCurrentPage}
-                locale={locale}
-              />
-            </div>
-          )}
-
-          {visibleTab === "individual" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {paginatedIndividualServices.length > 0 ? (
-                  paginatedIndividualServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
-                ) : (
-                  <ServiceGridSkeleton/>
-                )}
-              </div>
-              
-              <PaginationControls 
-                currentPage={currentPage}
-                totalPages={totalPages}
-                setCurrentPage={setCurrentPage}
-                locale={locale}
-              />
-            </div>
-          )}
-
-          {visibleTab === "code-editor" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {paginatedCodeEditorServices.length > 0 ? (
-                  paginatedCodeEditorServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
-                ) : (
-                  <ServiceGridSkeleton/>
-                )}
-              </div>
-              
-              <PaginationControls 
-                currentPage={currentPage}
-                totalPages={totalPages}
-                setCurrentPage={setCurrentPage}
-                locale={locale}
-              />
-            </div>
-          )}
-        </div>
       </Tabs>
+
+      <div className={`transition-opacity duration-200 ${isTabChanging ? 'opacity-0' : 'opacity-100'}`}>
+        {visibleTab === "api" && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {paginatedApiServices.length > 0 ? (
+                paginatedApiServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
+              ) : (
+                <ServiceGridSkeleton/>
+              )}
+            </div>
+            
+            <PaginationControls 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              setCurrentPage={setCurrentPage}
+              locale={locale}
+            />
+          </div>
+        )}
+
+        {visibleTab === "individual" && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {paginatedIndividualServices.length > 0 ? (
+                paginatedIndividualServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
+              ) : (
+                <ServiceGridSkeleton/>
+              )}
+            </div>
+            
+            <PaginationControls 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              setCurrentPage={setCurrentPage}
+              locale={locale}
+            />
+          </div>
+        )}
+
+        {visibleTab === "code-editor" && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {paginatedCodeEditorServices.length > 0 ? (
+                paginatedCodeEditorServices.map((service) => <ServiceCard key={service.id} service={service} locale={locale} />)
+              ) : (
+                <ServiceGridSkeleton/>
+              )}
+            </div>
+            
+            <PaginationControls 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              setCurrentPage={setCurrentPage}
+              locale={locale}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
