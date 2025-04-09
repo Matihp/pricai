@@ -15,7 +15,8 @@ const { t } = getLocaleAndTranslations(locale);
 
 const serviceIds = Astro.url.searchParams.getAll('ids');
 
-const allServices = await getAIServices();
+const result = await getAIServices();
+const allServices = result.services;
 
 const servicesToCompare = serviceIds.map(param => {
   const [type, id] = param.split(':');

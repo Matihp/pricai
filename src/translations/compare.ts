@@ -45,4 +45,12 @@ export const compareTranslations: TranslationDictionary = {
     es: "más",
     en: "more",
   },
+  "compare.add": {
+    es: "Añadir a comparación",
+    en: "Add to comparison"
+  },
+  "compare.alreadyAdded": {
+    es: "Ya en comparación",
+    en: "Already in comparison"
+  }
 };
