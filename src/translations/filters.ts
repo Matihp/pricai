@@ -38,8 +38,8 @@ export const filterTranslations: TranslationDictionary = {
     en: "Clear filters",
   },
   "filter.category": {
-    es: "Categoría",
-    en: "Category",
+    es: "Categorías",
+    en: "Categories",
   },
   "filter.type": {
     es: "Tipo",

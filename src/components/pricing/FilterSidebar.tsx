@@ -84,7 +84,7 @@ export default function FilterSidebar({
 
         <div className="space-y-6">
           <div className="space-y-3">
-            <h4 className="text-sm font-medium">
+            <h4 className="text-sm font-medium mt-6">
               {t("filter.category")}
             </h4>
             <div className="grid grid-cols-2 gap-2">
