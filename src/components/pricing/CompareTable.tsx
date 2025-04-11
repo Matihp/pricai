@@ -11,7 +11,7 @@ interface CompareTableProps {
 }
 
 export default function CompareTable({ locale, initialServices = [] }: CompareTableProps) {
-  const { compareList, removeFromCompare, clearCompareList } = useCompareContext();
+  const { compareList, removeFromCompare } = useCompareContext();
   const [isClient, setIsClient] = useState(false);
   const t = getTranslation(locale);
 
@@ -197,17 +197,6 @@ export default function CompareTable({ locale, initialServices = [] }: CompareTa
         <span className="text-sm text-muted-foreground">
           {displayList.length} {t("compare.servicesCompared")}
         </span>
-        <Button 
-          onClick={() => {
-            // Limpiar localStorage antes de volver al inicio
-            if (typeof window !== 'undefined') {
-              clearCompareList();
-            }
-            window.location.href = `/${locale}/`;
-          }}
-        >
-          {t("nav.backToHome")}
-        </Button>
       </div>
     </div>
   );

@@ -4,9 +4,9 @@ import { getLocaleAndTranslations } from '../../utils/i18n';
 import type { SupportedLocale } from '../../utils/i18n';
 import CompareTable from '../../components/pricing/CompareTable';
 import { CompareProvider } from '../../contexts/CompareContext';
-import { ArrowLeft } from 'lucide-react';
-import { getAIServices } from '@/lib/service';
+import { getServiceById } from '@/lib/service';
 import type { AIService } from '@/data/ai-data';
+import BackButton from '@/components/ui/BackButton';
 export const prerender = false;
 
 const { locale: urlLocale } = Astro.params;
@@ -15,13 +15,14 @@ const { t } = getLocaleAndTranslations(locale);
 
 const serviceIds = Astro.url.searchParams.getAll('ids');
 
-const result = await getAIServices();
-const allServices = result.services;
-
-const servicesToCompare = serviceIds.map(param => {
-  const [type, id] = param.split(':');
-  return allServices.find(service => service.id === id && service.type === type);
-}).filter(Boolean) as AIService[];
+const servicesToCompare = await Promise.all(
+  serviceIds.map(async (param) => {
+    const [type, id] = param.split(':');
+    if (!id) return null;
+    const service = await getServiceById(id);
+    return service && service.type === type ? service : null;
+  })
+).then(results => results.filter(Boolean) as AIService[]);
 ---
 
 <Layout 
@@ -30,15 +31,13 @@ const servicesToCompare = serviceIds.map(param => {
   locale={locale}
 >
   <div class="container mx-auto px-4 py-8 max-w-7xl">
-    <a href={`/${locale}/`} class="inline-flex items-center text-primary hover:underline mb-6 transition-colors">
-      <ArrowLeft className="w-4 h-4 mr-2" />
-      {t('nav.backToHome')}
-    </a>
     
+    <BackButton {locale} client:load/>
     <h1 class="text-3xl font-bold mb-6">{t('compare.title')}</h1>
-    
+
     <CompareProvider client:load>
       <CompareTable client:load locale={locale} initialServices={servicesToCompare} />
     </CompareProvider>
+
   </div>
 </Layout>

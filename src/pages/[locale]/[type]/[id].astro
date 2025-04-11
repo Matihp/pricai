@@ -2,10 +2,11 @@
 import Layout from "../../../layouts/Layout.astro";
 import { getLocaleAndTranslations } from "../../../utils/i18n";
 import type { SupportedLocale } from "../../../utils/i18n";
-import { Star, ArrowLeft, Calendar, Check, X } from "lucide-react";
-import { getAIServices, getRelatedServices, getServiceById } from "@/lib/service";
+import { Star, Calendar, Check, X } from "lucide-react";
+import { getRelatedServices, getServiceById } from "@/lib/service";
 import CompareButton from "../../../components/pricing/CompareButton";
 import ServiceDetailContainer from "../../../components/pricing/ServiceDetailContainer";
+import BackButton from "@/components/ui/BackButton";
 export const prerender = false;
 
 const { locale: urlLocale, type, id } = Astro.params;
@@ -62,13 +63,7 @@ const featureLabels = {
 >
   <ServiceDetailContainer client:load locale={locale}>
     <div class="container mx-auto px-4 py-8 max-w-6xl">
-      <a
-        href={`/${locale}/`}
-        class="inline-flex items-center text-primary hover:underline mb-6 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        {t("nav.backToHome")}
-      </a>
+      <BackButton {locale} client:load/>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Información principal -->
