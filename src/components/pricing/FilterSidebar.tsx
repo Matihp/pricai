@@ -21,6 +21,7 @@ interface FilterSidebarProps {
   clearFilters: () => void;
   locale?: SupportedLocale;
   isLoading?: boolean;
+  isFiltering?: boolean;
 }
 
 export default function FilterSidebar({
@@ -38,7 +39,8 @@ export default function FilterSidebar({
   toggleFeature,
   clearFilters,
   locale = 'en',
-  isLoading = false
+  isLoading = false,
+  isFiltering = false
 }: FilterSidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState(false);
   const t = getTranslation(locale);

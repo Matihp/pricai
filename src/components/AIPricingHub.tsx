@@ -24,6 +24,7 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
   const [totalItems, setTotalItems] = useState(0);
+  const [isFiltering, setIsFiltering] = useState(false);
   
   const [initialLoad, setInitialLoad] = useState(true);
   
@@ -49,14 +50,19 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
   const services = initialLoad && initialServices.length > 0 ? initialServices : fetchedServices;
 
   useEffect(() => {
-    if (loading === false && fetchedServices.length > 0) {
-      setInitialLoad(false);
+    if (loading === false) {
+      if (isFiltering) {
+        setIsFiltering(false);
+      }
+      if (initialLoad && fetchedServices.length > 0) {
+        setInitialLoad(false);
+      }
     }
     
     if (total !== undefined) {
       setTotalItems(total);
     }
-  }, [loading, fetchedServices, total]);
+  }, [loading, fetchedServices, total, isFiltering, initialLoad]);
   
   const isLoadingServices = loading && services.length === 0;
 
@@ -64,13 +70,16 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
     setCurrentPage(1);
 
     if (!initialLoad) {
-      console.log("Filter changed, updating results");
+      setIsFiltering(true);
     }
   }, [activeTab, selectedCategories, priceRange, selectedRating, releaseDate, selectedFeatures, initialLoad]);
 
   const allCategories = [...new Set(services.flatMap((service) => service.categories))];
 
   const toggleCategory = (category: string) => {
+    if (!initialLoad) {
+      setIsFiltering(true);
+    }
     if (selectedCategories.includes(category)) {
       setSelectedCategories(selectedCategories.filter((c) => c !== category));
     } else {
@@ -79,6 +88,9 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
   };
 
   const clearFilters = () => {
+    if (!initialLoad) {
+      setIsFiltering(true);
+    }
     setSelectedCategories([]);
     setPriceRange([0, 500]);
     setSelectedRating(0);
@@ -87,6 +99,9 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
   };
 
   const toggleFeature = (feature: string) => {
+    if (!initialLoad) {
+      setIsFiltering(true);
+    }
     if (selectedFeatures.includes(feature)) {
       setSelectedFeatures(selectedFeatures.filter((f) => f !== feature));
     } else {
@@ -143,7 +158,7 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
         isLoading={isLoadingServices}
       />
 
-<ServiceTabs 
+      <ServiceTabs 
         isFilterOpen={isFilterOpen}
         setIsFilterOpen={setIsFilterOpen}
         selectedCategories={selectedCategories}
@@ -158,7 +173,7 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
         setCurrentPage={setCurrentPage}
         itemsPerPage={itemsPerPage}
         totalItems={totalItems}
-        isLoading={isLoadingServices}
+        isLoading={isFiltering}
         error={error}
       />
     </div>
