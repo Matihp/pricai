@@ -6,6 +6,44 @@ const CACHE_TTL = 5 * 60 * 1000;
 
 let allServicesCache: { data: AIService[], timestamp: number } | null = null;
 
+// Función para precarga de datos comunes
+export async function preloadCommonData(): Promise<void> {
+  try {
+    // Precargar categorías
+    const categoriesKey = 'categories:all';
+    if (!cache.has(categoriesKey)) {
+      const categories = await getCategories();
+      cache.set(categoriesKey, { 
+        data: categories, 
+        timestamp: Date.now() 
+      });
+    }
+    
+    // Precargar servicios populares (primeros 20)
+    const popularServicesKey = 'services:popular';
+    if (!cache.has(popularServicesKey)) {
+      const result = await getAIServices(undefined, 1, 20);
+      cache.set(popularServicesKey, { 
+        data: result.services, 
+        timestamp: Date.now() 
+      });
+      
+      // Actualizar el caché compartido
+      allServicesCache = {
+        data: result.services,
+        timestamp: Date.now()
+      };
+    }
+    
+    console.log('Datos comunes precargados correctamente');
+  } catch (error) {
+    console.error('Error al precargar datos comunes:', error);
+  }
+}
+
+// Llamar a la precarga al inicializar el módulo
+preloadCommonData().catch(console.error);
+
 export async function getAIServices(
   type?: string,
   page?: number,
@@ -307,12 +345,49 @@ export async function getRelatedServices(
       .slice(0, limit);
   }
   
-  const result = await getAIServices();
+  // Si no hay caché, hacemos una consulta específica para servicios relacionados
+  // en lugar de obtener todos los servicios
+  const categoryPlaceholders = categories.map(() => '?').join(',');
   
-  return result.services
-    .filter(s => 
-      s.id !== serviceId && 
-      s.categories.some(cat => categories.includes(cat))
-    )
-    .slice(0, limit);
+  const query = `
+    SELECT DISTINCT s.id
+    FROM ai_services s
+    JOIN service_categories sc ON s.id = sc.service_id
+    JOIN categories c ON sc.category_id = c.id
+    WHERE s.id != ? 
+    AND c.name IN (${categoryPlaceholders})
+    LIMIT ?
+  `;
+  
+  const params = [serviceId, ...categories, limit];
+  
+  try {
+    const result = await db.execute({
+      sql: query,
+      args: params
+    });
+    
+    if (result.rows.length === 0) {
+      return [];
+    }
+    
+    // Obtener los detalles completos de los servicios relacionados
+    const relatedIds = result.rows.map(row => row.id as string);
+    const relatedServices = await Promise.all(
+      relatedIds.map(id => getServiceById(id))
+    );
+    
+    return relatedServices.filter(Boolean) as AIService[];
+  } catch (error) {
+    console.error('Error al obtener servicios relacionados:', error);
+    
+    // Fallback a la implementación anterior si hay un error
+    const result = await getAIServices();
+    return result.services
+      .filter(s => 
+        s.id !== serviceId && 
+        s.categories.some(cat => categories.includes(cat))
+      )
+      .slice(0, limit);
+  }
 }
