@@ -2,6 +2,7 @@
 import LanguageToggle from '../toggle/LanguageToggle.astro';
 import { getLocaleAndTranslations } from '../../utils/i18n';
 import ThemeToggle from '../toggle/ThemeToggle.astro';
+import SearchBar from '../search/SearchBar';
 
 const currentPath = Astro.url.pathname;
 
@@ -23,23 +24,115 @@ const localePrefix = locale === 'es' ? '/es' : '/en';
 
 const navItems = [
   { label: t('nav.home'), path: `${localePrefix}/` },
-  { label: t('nav.apiPricing'), path: `${localePrefix}/api-pricing` },
-  { label: t('nav.individualPricing'), path: `${localePrefix}/individual-pricing` },
-  { label: t('nav.codeEditors'), path: `${localePrefix}/code-editors` }
+  { label: t('nav.compare'), path: `${localePrefix}/compare` },
 ];
 
 const isCurrentPath = (itemPath: string) => {
   return currentPath === itemPath;
 };
 ---
+
 <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-  <div class="flex h-16 px-4 lg:px-16 2xl:px-42 items-center justify-between lg:justify-between">
-    <div class="font-bold text-2xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"> 
-      <a href={`${localePrefix}/`}>AI Pricing Hub</a>
-    </div>
-    <div class="flex items-center gap-4">
-      <ThemeToggle />
-      <LanguageToggle currentLocale={locale as 'es' | 'en'} />
+  <div class="container mx-auto">
+    <div class="flex h-16 items-center justify-between px-4 md:px-6">
+      <div class="flex items-center gap-4">
+        <div class="font-bold text-xl md:text-2xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"> 
+          <a href={`${localePrefix}/`}>AI Pricing Hub</a>
+        </div>
+        
+        <!-- Navigation for desktop -->
+        <nav class="hidden md:flex items-center space-x-4 ml-6">
+          {navItems.map(item => (
+            <a 
+              href={item.path}
+              class={`text-sm font-medium transition-colors hover:text-primary ${isCurrentPath(item.path) ? 'text-primary' : 'text-muted-foreground'}`}
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
+      </div>
+      
+      <div class="flex items-center gap-4">
+        <!-- Search Bar -->
+        <div class="hidden sm:block w-full max-w-xs">
+          <SearchBar locale={locale} client:load />
+        </div>
+        
+        <ThemeToggle />
+        <LanguageToggle currentLocale={locale as 'es' | 'en'} />
+        
+        <!-- Mobile search button -->
+        <button id="mobileSearchBtn" class="sm:hidden p-2 rounded-md hover:bg-accent">
+          <span class="sr-only">Search</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
+        
+        <!-- Mobile menu button -->
+        <button id="mobileMenuBtn" class="md:hidden p-2 rounded-md hover:bg-accent">
+          <span class="sr-only">Open menu</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        </button>
+      </div>
     </div>
   </div>
+  
+  <!-- Mobile search overlay -->
+  <div id="mobileSearchOverlay" class="hidden fixed inset-0 bg-background/95 z-50 p-4">
+    <div class="container mx-auto flex flex-col h-full">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-medium">{locale === 'es' ? 'Buscar' : 'Search'}</h2>
+        <button id="closeSearchBtn" class="p-2 rounded-md hover:bg-accent">
+          <span class="sr-only">Close</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="w-full">
+        <SearchBar locale={locale} client:load />
+      </div>
+    </div>
+  </div>
+  
+  <!-- Mobile navigation menu -->
+  <div id="mobileMenu" class="hidden md:hidden">
+    <nav class="container mx-auto px-4 py-3 border-t border-border">
+      {navItems.map(item => (
+        <a 
+          href={item.path}
+          class={`block py-2 text-sm font-medium transition-colors hover:text-primary ${isCurrentPath(item.path) ? 'text-primary' : 'text-muted-foreground'}`}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+  </div>
 </header>
+
+<script>
+  // Mobile menu toggle
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  
+  if (mobileMenuBtn && mobileMenu) {
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+  }
+  
+  // Mobile search toggle
+  const mobileSearchBtn = document.getElementById('mobileSearchBtn');
+  const mobileSearchOverlay = document.getElementById('mobileSearchOverlay');
+  const closeSearchBtn = document.getElementById('closeSearchBtn');
+  
+  if (mobileSearchBtn && mobileSearchOverlay && closeSearchBtn) {
+    mobileSearchBtn.addEventListener('click', () => {
+      mobileSearchOverlay.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    });
+    
+    closeSearchBtn.addEventListener('click', () => {
+      mobileSearchOverlay.classList.add('hidden');
+      document.body.style.overflow = '';
+    });
+  }
+</script>
