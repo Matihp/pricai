@@ -56,7 +56,8 @@ export async function getAIServices(
     commercialUse?: boolean,
     customModels?: boolean,
     isNew?: boolean,
-    releaseYear?: number
+    releaseYear?: number,
+    searchTerm?: string
   }
 ): Promise<{services: AIService[], total: number}> {
   const filterKey = filters ? JSON.stringify(filters) : '';
@@ -106,6 +107,13 @@ export async function getAIServices(
       if (filters.releaseYear) {
         whereClause += ' AND s.release_year = ?';
         queryParams.push(filters.releaseYear);
+      }
+      
+      // Add search term filter if present
+      if (filters.searchTerm) {
+        whereClause += ' AND (s.name LIKE ? OR s.description_es LIKE ? OR s.description_en LIKE ?)';
+        const searchPattern = `%${filters.searchTerm}%`;
+        queryParams.push(searchPattern, searchPattern, searchPattern);
       }
     }
     
@@ -240,14 +248,12 @@ export async function getServiceById(id: string): Promise<AIService | null> {
 
   const cachedData = cache.get(cacheKey);
   if (cachedData && now - cachedData.timestamp < CACHE_TTL) {
-    console.log(`Cache hit for getServiceById(${id})`);
     return cachedData.data;
   }
 
   if (allServicesCache && now - allServicesCache.timestamp < CACHE_TTL) {
     const service = allServicesCache.data.find(s => s.id === id);
     if (service) {
-      console.log(`Found service ${id} in allServicesCache`);
       cache.set(cacheKey, { data: service, timestamp: now });
       return service;
     }

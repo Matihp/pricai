@@ -22,7 +22,6 @@ export default function SearchBar({ locale }: SearchBarProps) {
 
   const [filteredServices, setFilteredServices] = useState<AIService[]>([]);
 
-  // Handle outside clicks to close dropdown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -39,7 +38,6 @@ export default function SearchBar({ locale }: SearchBarProps) {
     };
   }, []);
 
-  // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedTerm(searchTerm);

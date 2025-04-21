@@ -34,8 +34,9 @@ export const GET: APIRoute = async ({ request }) => {
   const now = Date.now();
   const cachedResult = cache.get(queryString);
   
+  const searchTerm = url.searchParams.get('search');
+  
   if (cachedResult && now - cachedResult.timestamp < CACHE_TTL) {
-    console.log('Cache hit for API query:', queryString);
     return new Response(JSON.stringify({
       services: cachedResult.data,
       total: cachedResult.total
@@ -61,7 +62,7 @@ export const GET: APIRoute = async ({ request }) => {
   const page = url.searchParams.get('page') ? parseInt(url.searchParams.get('page')!) : 1;
   const limit = url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : 9;
   
-  try {
+  try {  
     const result = await fetchServicesWithRetry(queryString, async () => {
       const result = await getAIServices(
         type ?? undefined,
@@ -75,22 +76,37 @@ export const GET: APIRoute = async ({ request }) => {
           commercialUse: commercialUse === 'true',
           customModels: customModels === 'true',
           isNew: isNew === 'true',
-          releaseYear: releaseYear ? parseInt(releaseYear) : undefined
+          releaseYear: releaseYear ? parseInt(releaseYear) : undefined,
+          searchTerm: searchTerm ?? undefined
         }
       );
       
       return result;
     });
 
+    let filteredServices = result.services;
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filteredServices = result.services.filter(service => {
+        const nameMatch = service.name.toLowerCase().includes(term);
+        const descMatch = typeof service.description === 'object'
+          ? ((service.description.es?.toLowerCase() || '').includes(term) || 
+             (service.description.en?.toLowerCase() || '').includes(term))
+          : ((service.description as string)?.toLowerCase() || '').includes(term);
+        
+        return nameMatch || descMatch;
+      });
+    }
+
     cache.set(queryString, { 
-      data: result.services, 
-      total: result.total,
+      data: filteredServices, 
+      total: filteredServices.length,
       timestamp: now 
     });
     
     return new Response(JSON.stringify({
-      services: result.services,
-      total: result.total
+      services: filteredServices,
+      total: filteredServices.length
     }), {
       status: 200,
       headers: {
@@ -104,7 +120,6 @@ export const GET: APIRoute = async ({ request }) => {
     const fallbackData = cache.get(queryString) || cache.get(`services:${type || 'all'}`);
     
     if (fallbackData) {
-      console.log('Using fallback data from cache');
       return new Response(JSON.stringify({
         services: fallbackData.data,
         total: fallbackData.total

@@ -15,6 +15,7 @@ interface UseServicesOptions {
   page?: number;
   limit?: number;
   skipInitialCall?: boolean;
+  searchTerm?: string;
 }
 
 const MAX_RETRIES = 2;
@@ -40,7 +41,6 @@ export function useServices(options: UseServicesOptions = {}) {
       return response;
     } catch (err) {
       if (retries > 0) {
-        console.log(`Retry attempt ${MAX_RETRIES - retries + 1} for: ${url}`);
         retryCountRef.current += 1;
         await wait(RETRY_DELAY);
         return fetchWithRetry(url, retries - 1);
@@ -69,6 +69,7 @@ export function useServices(options: UseServicesOptions = {}) {
     }
     retryCountRef.current = 0;
     
+    // Inside the fetchServices function
     async function fetchServices() {
       try {
         setLoading(true);
@@ -114,6 +115,10 @@ export function useServices(options: UseServicesOptions = {}) {
           params.append('releaseYear', options.releaseYear.toString());
         }
         
+        if (options.searchTerm) {
+          params.append('search', options.searchTerm);
+        }
+        
         // Añadir parámetros de paginación
         if (options.page) {
           params.append('page', options.page.toString());
@@ -124,7 +129,7 @@ export function useServices(options: UseServicesOptions = {}) {
         }
         
         const url = `/api/services?${params.toString()}`;
-
+    
         const response = await fetchWithRetry(url);
         const data = await response.json();
         
@@ -132,7 +137,6 @@ export function useServices(options: UseServicesOptions = {}) {
           console.log('Using fallback data due to server error');
         }
         
-        // Add type assertion to handle the unknown type
         if (data && typeof data === 'object' && 'services' in data && Array.isArray((data as any).services)) {
           setServices((data as {services: AIService[], total: number}).services);
           setTotal((data as {services: AIService[], total: number}).total || 0);
@@ -167,7 +171,8 @@ export function useServices(options: UseServicesOptions = {}) {
     options.releaseYear,
     options.page,
     options.limit,
-    options.skipInitialCall
+    options.skipInitialCall,
+    options.searchTerm
   ]);
   
   return { services, loading, error, total, retryCount: retryCountRef.current };
