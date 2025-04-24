@@ -1,5 +1,5 @@
 import { db } from './db';
-import type { AIService } from '@/data/ai-data';
+import type { AIService, AIModel, Description } from '@/data/ai-data';
 
 const cache = new Map<string, { data: any, timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; 
@@ -74,15 +74,12 @@ export async function getAIServices(
 
   try {
     // Construir la consulta base
-    let whereClause = type ? 'WHERE s.type = ?' : 'WHERE 1=1';
+    // Modificado para buscar en los tipos (ahora es un array)
+    let whereClause = type ? 'WHERE st.type = ?' : 'WHERE 1=1';
     let queryParams: any[] = type ? [type] : [];
     
     // Añadir filtros adicionales si están presentes
     if (filters) {
-      if (filters.minRating) {
-        whereClause += ' AND s.rating >= ?';
-        queryParams.push(filters.minRating);
-      }
       
       if (filters.hasFree) {
         whereClause += ' AND s.has_free = 1';
@@ -109,7 +106,6 @@ export async function getAIServices(
         queryParams.push(filters.releaseYear);
       }
       
-      // Add search term filter if present
       if (filters.searchTerm) {
         whereClause += ' AND (s.name LIKE ? OR s.description_es LIKE ? OR s.description_en LIKE ?)';
         const searchPattern = `%${filters.searchTerm}%`;
@@ -117,10 +113,10 @@ export async function getAIServices(
       }
     }
     
-    // Primero obtenemos el total de registros que coinciden con los filtros
     const countQuery = `
-      SELECT COUNT(*) as total
+      SELECT COUNT(DISTINCT s.id) as total
       FROM ai_services s
+      LEFT JOIN service_types st ON s.id = st.service_id
       ${whereClause}
     `;
     
@@ -131,16 +127,16 @@ export async function getAIServices(
     
     const total = parseInt(countResult.rows[0].total as string);
     
-    // Luego obtenemos los servicios paginados
     let servicesQuery = `
-      SELECT 
-        s.id, s.name, s.description_es, s.description_en, s.price, s.price_details, 
-        s.type, s.rating, s.has_free, s.has_api, s.commercial_use, s.custom_models, s.is_new, s.release_year
+      SELECT DISTINCT 
+        s.id, s.name, s.description_es, s.description_en, s.price_details, 
+        s.has_free, s.has_api, s.commercial_use, s.custom_models, s.is_new, s.release_year,
+        s.security_es, s.security_en, s.support_es, s.support_en, s.integrations_es, s.integrations_en
       FROM ai_services s
+      LEFT JOIN service_types st ON s.id = st.service_id
       ${whereClause}
     `;
-    
-    // Añadimos la paginación solo si se especifican los parámetros
+
     if (page && limit) {
       const offset = (page - 1) * limit;
       servicesQuery += ` LIMIT ? OFFSET ?`;
@@ -158,8 +154,14 @@ export async function getAIServices(
 
     const serviceIds = servicesResult.rows.map(row => row.id);
 
-    // Obtener categorías y características para los servicios filtrados
-    const [categoriesResult, featuresResult] = await Promise.all([
+    const [
+      categoriesResult, 
+      typesResult, 
+      featuresResult, 
+      modelsResult, 
+      useCasesResult, 
+      toolsResult
+    ] = await Promise.all([
       db.execute(`
         SELECT sc.service_id, c.name
         FROM service_categories sc
@@ -168,16 +170,47 @@ export async function getAIServices(
       `, serviceIds),
       
       db.execute(`
+        SELECT service_id, type
+        FROM service_types
+        WHERE service_id IN (${serviceIds.map(() => '?').join(',')})
+      `, serviceIds),
+      
+      db.execute(`
         SELECT service_id, feature_es, feature_en
         FROM features
+        WHERE service_id IN (${serviceIds.map(() => '?').join(',')})
+      `, serviceIds),
+      
+      db.execute(`
+        SELECT 
+          m.service_id, m.name, m.description_es, m.description_en, 
+          m.price_input, m.price_cached_input, m.price_output, 
+          m.context_length, m.rating, m.additional_price_data
+        FROM models m
+        WHERE m.service_id IN (${serviceIds.map(() => '?').join(',')})
+      `, serviceIds),
+      
+      db.execute(`
+        SELECT service_id, use_case_es, use_case_en
+        FROM use_cases
+        WHERE service_id IN (${serviceIds.map(() => '?').join(',')})
+      `, serviceIds),
+      
+      db.execute(`
+        SELECT service_id, tool_name, tool_data
+        FROM tools
         WHERE service_id IN (${serviceIds.map(() => '?').join(',')})
       `, serviceIds)
     ]);
 
-    console.log(`Categorías y características obtenidas en ${Date.now() - startTime}ms`);
+    console.log(`Data fetched in ${Date.now() - startTime}ms`);
 
     const categoriesMap = new Map<string, string[]>();
+    const typesMap = new Map<string, ("api" | "individual" | "code-editor")[]>();
     const featuresMap = new Map<string, { es: string[], en: string[] }>();
+    const modelsMap = new Map<string, AIModel[]>();
+    const useCasesMap = new Map<string, { es: string[], en: string[] }>();
+    const toolsMap = new Map<string, Record<string, any>>();
 
     for (const row of categoriesResult.rows) {
       const serviceId = row.service_id as string;
@@ -186,6 +219,15 @@ export async function getAIServices(
         categoriesMap.set(serviceId, []);
       }
       categoriesMap.get(serviceId)!.push(categoryName);
+    }
+
+    for (const row of typesResult.rows) {
+      const serviceId = row.service_id as string;
+      const type = row.type as "api" | "individual" | "code-editor";
+      if (!typesMap.has(serviceId)) {
+        typesMap.set(serviceId, []);
+      }
+      typesMap.get(serviceId)!.push(type);
     }
 
     for (const row of featuresResult.rows) {
@@ -199,35 +241,109 @@ export async function getAIServices(
       featuresMap.get(serviceId)!.en.push(featureEn);
     }
 
-    const services: AIService[] = servicesResult.rows.map(row => {
-      const serviceId = row.id as string;
+    for (const row of modelsResult.rows) {
+      const serviceId = row.service_id as string;
+      if (!modelsMap.has(serviceId)) {
+        modelsMap.set(serviceId, []);
+      }
+      
+      const priceData: Record<string, string> = {};
+      if (row.price_input) priceData.input = row.price_input as string;
+      if (row.price_cached_input) priceData.cached_input = row.price_cached_input as string;
+      if (row.price_output) priceData.output = row.price_output as string;
 
-      return {
-        id: serviceId,
+      const additionalPriceData = row.additional_price_data ? 
+        JSON.parse(row.additional_price_data as string) : {};
+      Object.assign(priceData, additionalPriceData);
+      
+      const model: AIModel = {
         name: row.name as string,
         description: {
           es: row.description_es as string,
           en: row.description_en as string
         },
-        price: row.price as string,
+        price: priceData,
+        context_length: row.context_length as string,
+        rating: row.rating as number
+      };
+      
+      modelsMap.get(serviceId)!.push(model);
+    }
+
+    for (const row of useCasesResult.rows) {
+      const serviceId = row.service_id as string;
+      const useCaseEs = row.use_case_es as string;
+      const useCaseEn = row.use_case_en as string;
+      if (!useCasesMap.has(serviceId)) {
+        useCasesMap.set(serviceId, { es: [], en: [] });
+      }
+      useCasesMap.get(serviceId)!.es.push(useCaseEs);
+      useCasesMap.get(serviceId)!.en.push(useCaseEn);
+    }
+
+    for (const row of toolsResult.rows) {
+      const serviceId = row.service_id as string;
+      const toolName = row.tool_name as string;
+      const toolData = JSON.parse(row.tool_data as string);
+      if (!toolsMap.has(serviceId)) {
+        toolsMap.set(serviceId, {});
+      }
+      toolsMap.get(serviceId)![toolName] = toolData;
+    }
+
+    const services: AIService[] = servicesResult.rows.map(row => {
+      const serviceId = row.id as string;
+
+      const description: Description = {};
+      if (row.description_es) description.es = row.description_es as string;
+      if (row.description_en) description.en = row.description_en as string;
+
+      const security: Description = {};
+      if (row.security_es) security.es = row.security_es as string;
+      if (row.security_en) security.en = row.security_en as string;
+
+      const support: Description = {};
+      if (row.support_es) support.es = row.support_es as string;
+      if (row.support_en) support.en = row.support_en as string;
+
+      const integrations: Description = {};
+      if (row.integrations_es) integrations.es = row.integrations_es as string;
+      if (row.integrations_en) integrations.en = row.integrations_en as string;
+
+      return {
+        id: serviceId,
+        name: row.name as string,
+        description: Object.keys(description).length ? description : "",
+        models: modelsMap.get(serviceId) || [],
         priceDetails: row.price_details as string,
         categories: categoriesMap.get(serviceId) || [],
-        type: row.type as "api" | "individual" | "code-editor",
+        types: typesMap.get(serviceId) || [],
         features: featuresMap.get(serviceId) || { es: [], en: [] },
-        rating: row.rating as number,
+        tools: toolsMap.get(serviceId),
         hasFree: Boolean(row.has_free),
         hasAPI: Boolean(row.has_api),
         commercialUse: Boolean(row.commercial_use),
         customModels: Boolean(row.custom_models),
         isNew: Boolean(row.is_new),
-        releaseYear: row.release_year as number
+        releaseYear: row.release_year as number,
+        security: Object.keys(security).length ? security : undefined,
+        support: Object.keys(support).length ? support : undefined,
+        useCases: useCasesMap.get(serviceId) || { es: [], en: [] },
+        integrations: Object.keys(integrations).length ? integrations : undefined
       };
     });
 
     let filteredServices = services;
+
     if (filters?.categories && filters.categories.length > 0) {
       filteredServices = filteredServices.filter(service => 
         filters.categories!.some(cat => service.categories.includes(cat))
+      );
+    }
+
+    if (filters?.minRating) {
+      filteredServices = filteredServices.filter(service => 
+        service.models.some(model => model.rating >= filters.minRating!)
       );
     }
 
@@ -262,8 +378,9 @@ export async function getServiceById(id: string): Promise<AIService | null> {
   try {
     const serviceQuery = `
       SELECT 
-        s.id, s.name, s.description_es, s.description_en, s.price, s.price_details, 
-        s.type, s.rating, s.has_free, s.has_api, s.commercial_use, s.custom_models, s.is_new, s.release_year
+        s.id, s.name, s.description_es, s.description_en, s.price_details, 
+        s.has_free, s.has_api, s.commercial_use, s.custom_models, s.is_new, s.release_year,
+        s.security_es, s.security_en, s.support_es, s.support_en, s.integrations_es, s.integrations_en
       FROM ai_services s
       WHERE s.id = ?
     `;
@@ -277,7 +394,14 @@ export async function getServiceById(id: string): Promise<AIService | null> {
       return null;
     }
 
-    const [categoriesResult, featuresResult] = await Promise.all([
+    const [
+      categoriesResult, 
+      typesResult, 
+      featuresResult, 
+      modelsResult, 
+      useCasesResult, 
+      toolsResult
+    ] = await Promise.all([
       db.execute(`
         SELECT sc.service_id, c.name
         FROM service_categories sc
@@ -286,40 +410,123 @@ export async function getServiceById(id: string): Promise<AIService | null> {
       `, [id]),
       
       db.execute(`
+        SELECT service_id, type
+        FROM service_types
+        WHERE service_id = ?
+      `, [id]),
+      
+      db.execute(`
         SELECT service_id, feature_es, feature_en
         FROM features
+        WHERE service_id = ?
+      `, [id]),
+      
+      db.execute(`
+        SELECT 
+          m.service_id, m.name, m.description_es, m.description_en, 
+          m.price_input, m.price_cached_input, m.price_output, 
+          m.context_length, m.rating, m.additional_price_data
+        FROM models m
+        WHERE m.service_id = ?
+      `, [id]),
+      
+      db.execute(`
+        SELECT service_id, use_case_es, use_case_en
+        FROM use_cases
+        WHERE service_id = ?
+      `, [id]),
+      
+      db.execute(`
+        SELECT service_id, tool_name, tool_data
+        FROM tools
         WHERE service_id = ?
       `, [id])
     ]);
 
     const categories: string[] = categoriesResult.rows.map(row => row.name as string);
     
+    const types: ("api" | "individual" | "code-editor")[] = typesResult.rows.map(
+      row => row.type as "api" | "individual" | "code-editor"
+    );
+    
     const features = { es: [], en: [] } as { es: string[], en: string[] };
     for (const row of featuresResult.rows) {
       features.es.push(row.feature_es as string);
       features.en.push(row.feature_en as string);
     }
+    
+    const models: AIModel[] = [];
+    for (const row of modelsResult.rows) {
+      const priceData: Record<string, string> = {};
+      if (row.price_input) priceData.input = row.price_input as string;
+      if (row.price_cached_input) priceData.cached_input = row.price_cached_input as string;
+      if (row.price_output) priceData.output = row.price_output as string;
+
+      const additionalPriceData = row.additional_price_data ? 
+        JSON.parse(row.additional_price_data as string) : {};
+      Object.assign(priceData, additionalPriceData);
+      
+      models.push({
+        name: row.name as string,
+        description: {
+          es: row.description_es as string,
+          en: row.description_en as string
+        },
+        price: priceData,
+        context_length: row.context_length as string,
+        rating: row.rating as number
+      });
+    }
+    
+    const useCases = { es: [], en: [] } as { es: string[], en: string[] };
+    for (const row of useCasesResult.rows) {
+      useCases.es.push(row.use_case_es as string);
+      useCases.en.push(row.use_case_en as string);
+    }
+    
+    const tools: Record<string, any> = {};
+    for (const row of toolsResult.rows) {
+      tools[row.tool_name as string] = JSON.parse(row.tool_data as string);
+    }
 
     const row = serviceResult.rows[0];
+
+    const description: Description = {};
+    if (row.description_es) description.es = row.description_es as string;
+    if (row.description_en) description.en = row.description_en as string;
+
+    const security: Description = {};
+    if (row.security_es) security.es = row.security_es as string;
+    if (row.security_en) security.en = row.security_en as string;
+
+    const support: Description = {};
+    if (row.support_es) support.es = row.support_es as string;
+    if (row.support_en) support.en = row.support_en as string;
+
+    const integrations: Description = {};
+    if (row.integrations_es) integrations.es = row.integrations_es as string;
+    if (row.integrations_en) integrations.en = row.integrations_en as string;
+    
     const service: AIService = {
       id: row.id as string,
       name: row.name as string,
-      description: {
-        es: row.description_es as string,
-        en: row.description_en as string
-      },
-      price: row.price as string,
+      description: Object.keys(description).length ? description : "",
+      models,
       priceDetails: row.price_details as string,
       categories,
-      type: row.type as "api" | "individual" | "code-editor",
+      types,
       features,
-      rating: row.rating as number,
+      tools: Object.keys(tools).length ? tools : undefined,
       hasFree: Boolean(row.has_free),
       hasAPI: Boolean(row.has_api),
       commercialUse: Boolean(row.commercial_use),
       customModels: Boolean(row.custom_models),
       isNew: Boolean(row.is_new),
-      releaseYear: row.release_year as number
+      releaseYear: row.release_year as number,
+      security: Object.keys(security).length ? security : undefined,
+      support: Object.keys(support).length ? support : undefined,
+      useCases,
+      integrations: Object.keys(integrations).length ? integrations : undefined
     };
 
     cache.set(cacheKey, { data: service, timestamp: now });

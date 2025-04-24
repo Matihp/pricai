@@ -4,6 +4,7 @@ export const prerender = false;
 
 interface UseServicesOptions {
   type?: string;
+  types?: ("api" | "individual" | "code-editor")[]; // Nueva propiedad para filtrar por múltiples tipos
   categories?: string[];
   minRating?: number;
   hasFree?: boolean;
@@ -77,8 +78,16 @@ export function useServices(options: UseServicesOptions = {}) {
         
         const params = new URLSearchParams();
         
+        // Mantener compatibilidad con el parámetro type
         if (options.type) {
           params.append('type', options.type);
+        }
+        
+        // Añadir soporte para múltiples tipos
+        if (options.types && options.types.length > 0) {
+          options.types.forEach(type => {
+            params.append('types', type);
+          });
         }
         
         if (options.categories && options.categories.length > 0) {
@@ -161,6 +170,7 @@ export function useServices(options: UseServicesOptions = {}) {
     return () => clearTimeout(timeoutId);
   }, [
     options.type,
+    options.types,
     options.categories,
     options.minRating,
     options.hasFree,

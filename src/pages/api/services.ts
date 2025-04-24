@@ -89,12 +89,44 @@ export const GET: APIRoute = async ({ request }) => {
       const term = searchTerm.toLowerCase();
       filteredServices = result.services.filter(service => {
         const nameMatch = service.name.toLowerCase().includes(term);
-        const descMatch = typeof service.description === 'object'
-          ? ((service.description.es?.toLowerCase() || '').includes(term) || 
-             (service.description.en?.toLowerCase() || '').includes(term))
-          : ((service.description as string)?.toLowerCase() || '').includes(term);
         
-        return nameMatch || descMatch;
+        let descMatch = false;
+        if (typeof service.description === 'object') {
+          descMatch = (
+            ((service.description.es?.toLowerCase() || '').includes(term)) || 
+            ((service.description.en?.toLowerCase() || '').includes(term))
+          );
+        } else if (typeof service.description === 'string') {
+          descMatch = service.description.toLowerCase().includes(term);
+        }
+        
+        const modelMatch = service.models.some(model => {
+          const modelNameMatch = model.name.toLowerCase().includes(term);
+          
+          let modelDescMatch = false;
+          if (typeof model.description === 'object') {
+            modelDescMatch = (
+              ((model.description.es?.toLowerCase() || '').includes(term)) || 
+              ((model.description.en?.toLowerCase() || '').includes(term))
+            );
+          } else if (typeof model.description === 'string') {
+            modelDescMatch = model.description.toLowerCase().includes(term);
+          }
+          
+          return modelNameMatch || modelDescMatch;
+        });
+        
+        const featureMatch = (
+          service.features.es.some(feature => feature.toLowerCase().includes(term)) ||
+          service.features.en.some(feature => feature.toLowerCase().includes(term))
+        );
+
+        const useCaseMatch = service.useCases ? (
+          service.useCases.es.some(useCase => useCase.toLowerCase().includes(term)) ||
+          service.useCases.en.some(useCase => useCase.toLowerCase().includes(term))
+        ) : false;
+        
+        return nameMatch || descMatch || modelMatch || featureMatch || useCaseMatch;
       });
     }
 
