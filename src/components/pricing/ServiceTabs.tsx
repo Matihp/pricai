@@ -257,6 +257,7 @@ export default function ServiceTabs({
                     key={service.id}
                     service={service}
                     locale={locale}
+                    activeType="api" // Pasamos el tipo activo
                   />
                 ))
               ) : (
@@ -284,6 +285,7 @@ export default function ServiceTabs({
                     key={service.id}
                     service={service}
                     locale={locale}
+                    activeType="individual" // Pasamos el tipo activo
                   />
                 ))
               ) : (
@@ -311,6 +313,7 @@ export default function ServiceTabs({
                     key={service.id}
                     service={service}
                     locale={locale}
+                    activeType="code-editor" // Pasamos el tipo activo
                   />
                 ))
               ) : (

@@ -29,7 +29,8 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
   const [initialLoad, setInitialLoad] = useState(true);
   
   const { services: fetchedServices, loading, error, total } = useServices({
-    type: activeTab !== "all" ? activeTab : undefined,
+    // Cambiamos type por types como un array
+    types: activeTab !== "all" ? [activeTab as "api" | "individual" | "code-editor"] : undefined,
     categories: selectedCategories.length > 0 ? selectedCategories : undefined,
     minRating: selectedRating > 0 ? selectedRating : undefined,
     hasFree: selectedFeatures.includes("Free Tier"),
@@ -109,9 +110,9 @@ export default function AIPricingHub({ initialServices = [], locale = 'es' }: AI
     }
   };
 
-  const apiServices = services.filter((service) => service.type === "api");
-  const individualServices = services.filter((service) => service.type === "individual");
-  const codeEditorServices = services.filter((service) => service.type === "code-editor");
+  const apiServices = services.filter((service) => service.types.includes("api"));
+  const individualServices = services.filter((service) => service.types.includes("individual"));
+  const codeEditorServices = services.filter((service) => service.types.includes("code-editor"));
 
   useEffect(() => {
     const component = document.querySelector('[data-component="AIPricingHub"]');
