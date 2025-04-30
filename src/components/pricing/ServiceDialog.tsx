@@ -14,10 +14,20 @@ export const prerender = false;
 interface ServiceDialogProps {
   service: AIService;
   locale?: SupportedLocale;
+  activeType?: "api" | "individual" | "code-editor"; // Nuevo parámetro para especificar qué tipo usar
 }
 
-export default function ServiceDialog({ service, locale = 'es' }: ServiceDialogProps) {
+export default function ServiceDialog({ 
+  service, 
+  locale = 'es',
+  activeType // Valor que viene de la pestaña activa
+}: ServiceDialogProps) {
   const t = getTranslation(locale);
+
+  // Determinar qué tipo de servicio usar para la redirección
+  const serviceType = activeType && service.types.includes(activeType) 
+    ? activeType 
+    : service.types[0];
 
   const description = typeof service.description === 'object' 
     ? service.description[locale] 
@@ -42,7 +52,7 @@ export default function ServiceDialog({ service, locale = 'es' }: ServiceDialogP
         <div className="space-y-4 py-4">
           <div>
             <h4 className="font-medium mb-2">{t("service.pricing")}</h4>
-            <div className="text-2xl font-bold">{service.price}</div>
+            {/* <div className="text-2xl font-bold">{service.price}</div> */}
             <div className="text-sm text-muted-foreground">{service.priceDetails}</div>
           </div>
           <div>
@@ -57,7 +67,7 @@ export default function ServiceDialog({ service, locale = 'es' }: ServiceDialogP
           </div>
         </div>
         <div className="flex justify-end">
-          <Button onClick={() => window.location.href = `/${locale}/${service.type}/${service.id}`}>
+          <Button onClick={() => window.location.href = `/${locale}/${serviceType}/${service.id}`}>
             {t("button.viewFullDetails")}
           </Button>
         </div>

@@ -50,6 +50,8 @@ export const GET: APIRoute = async ({ request }) => {
   }
   
   const type = url.searchParams.get('type');
+  // Obtener múltiples tipos si están presentes
+  const types = url.searchParams.getAll('types');
   const categories = url.searchParams.getAll('category');
   const minRating = url.searchParams.get('minRating');
   const hasFree = url.searchParams.get('hasFree');
@@ -64,6 +66,7 @@ export const GET: APIRoute = async ({ request }) => {
   
   try {  
     const result = await fetchServicesWithRetry(queryString, async () => {
+      // Si hay múltiples tipos, filtrar los servicios después de obtenerlos
       const result = await getAIServices(
         type ?? undefined,
         page,
@@ -85,9 +88,17 @@ export const GET: APIRoute = async ({ request }) => {
     });
 
     let filteredServices = result.services;
+    
+    // Filtrar por múltiples tipos si están presentes
+    if (types && types.length > 0) {
+      filteredServices = filteredServices.filter(service => 
+        types.some(t => service.types.includes(t as "api" | "individual" | "code-editor"))
+      );
+    }
+    
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filteredServices = result.services.filter(service => {
+      filteredServices = filteredServices.filter(service => {
         const nameMatch = service.name.toLowerCase().includes(term);
         
         let descMatch = false;

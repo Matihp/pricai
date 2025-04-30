@@ -15,7 +15,9 @@ export default function CompareFloatingButton({ locale }: CompareFloatingButtonP
   const createCompareUrl = () => {
     const params = new URLSearchParams();
     compareList.forEach(service => {
-      params.append('ids', `${service.type}:${service.id}`);
+      // Usamos el primer tipo del array types o un valor por defecto si no existe
+      const serviceType = service.types && service.types.length > 0 ? service.types[0] : "api";
+      params.append('ids', `${serviceType}:${service.id}`);
     });
     return `/${locale}/compare?${params.toString()}`;
   };

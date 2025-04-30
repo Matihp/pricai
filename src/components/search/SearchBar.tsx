@@ -131,7 +131,8 @@ export default function SearchBar({ locale }: SearchBarProps) {
                   <a
                     className="block px-4 py-2 hover:bg-accent text-sm cursor-pointer"
                     onClick={() => {
-                      window.location.href = `/${locale}/${service.type}/${service.id}`;
+                      // Usar el primer tipo del array types para la redirección
+                      window.location.href = `/${locale}/${service.types[0]}/${service.id}`;
                       setIsOpen(false);
                       setSearchTerm("");
                     }}

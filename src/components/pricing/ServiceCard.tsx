@@ -38,15 +38,22 @@ const stringToColor = (str: string) => {
 interface ServiceCardProps {
   service: AIService;
   locale?: SupportedLocale;
+  activeType?: "api" | "individual" | "code-editor"; // Tipo específico en lugar de string
 }
 
 export default function ServiceCard({
   service,
   locale = "es",
+  activeType, // Valor que viene de la pestaña activa
 }: ServiceCardProps) {
   const t = getTranslation(locale);
   const { addToCompare, removeFromCompare, isInCompareList } = useCompareContext();
   const isCompared = isInCompareList(service.id);
+  
+  // Determinar qué tipo de servicio usar para la redirección
+  const serviceType = activeType && service.types.includes(activeType) 
+    ? activeType 
+    : service.types[0];
   
   const description =
     typeof service.description === "object"
@@ -95,7 +102,7 @@ export default function ServiceCard({
           ))}
         </div>
         <div className="mb-4">
-          <div className="text-2xl font-bold">{service.price}</div>
+          {/* <div className="text-2xl font-bold">{service.price}</div> */}
           <div className="text-sm text-muted-foreground">
             {service.priceDetails}
           </div>
@@ -130,7 +137,7 @@ export default function ServiceCard({
             <div className="space-y-4 py-4">
               <div>
                 <h4 className="font-medium mb-2">{t("service.pricing")}</h4>
-                <div className="text-2xl font-bold">{service.price}</div>
+                {/* <div className="text-2xl font-bold">{service.price}</div> */}
                 <div className="text-sm text-muted-foreground">
                   {service.priceDetails}
                 </div>
@@ -147,11 +154,11 @@ export default function ServiceCard({
               </div>
             </div>
             <div className="flex justify-end">
-              <Button
+            <Button
                 className="cursor-pointer"
                 variant="default"
                 onClick={() =>
-                  (window.location.href = `/${locale}/${service.type}/${service.id}`)
+                  (window.location.href = `/${locale}/${serviceType}/${service.id}`)
                 }
               >
                 {t("button.details")}
@@ -167,7 +174,7 @@ export default function ServiceCard({
               height: "35px",
             }}
             variant="default"
-            onClick={() => (window.location.href = `/${locale}/${service.type}/${service.id}`)}
+            onClick={() => (window.location.href = `/${locale}/${serviceType}/${service.id}`)}
           >
             {t("button.details")}
           </Button>
