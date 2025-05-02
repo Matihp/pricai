@@ -5,7 +5,8 @@ import {  type SupportedLocale } from '../../utils/i18n';
 import { getAIServices } from '@/lib/service';
 
 const locale: SupportedLocale = 'en';
-const initialServices = await getAIServices();
+const servicesData = await getAIServices();
+const initialServices = servicesData.services;
 
 Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
 ---
