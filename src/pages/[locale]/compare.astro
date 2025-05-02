@@ -2,42 +2,55 @@
 import Layout from '../../layouts/Layout.astro';
 import { getLocaleAndTranslations } from '../../utils/i18n';
 import type { SupportedLocale } from '../../utils/i18n';
-import CompareTable from '../../components/pricing/CompareTable';
-import { CompareProvider } from '../../contexts/CompareContext';
 import { getServiceById } from '@/lib/service';
 import type { AIService } from '@/data/ai-data';
-import BackButton from '@/components/ui/BackButton';
+import CompareClient from '@/components/compare/CompareClient';
+import { generateSEOMetadata } from '@/utils/seo';
+
 export const prerender = false;
 
+// Obtener el locale desde la URL
 const { locale: urlLocale } = Astro.params;
 const locale = (urlLocale === 'es' || urlLocale === 'en') ? urlLocale : 'es' as SupportedLocale;
 const { t } = getLocaleAndTranslations(locale);
 
+// Obtener servicios desde la URL o localStorage
 const serviceIds = Astro.url.searchParams.getAll('ids');
 
+// Obtener servicios de la base de datos
 const servicesToCompare = await Promise.all(
   serviceIds.map(async (param) => {
     const [type, id] = param.split(':');
     if (!id) return null;
     const service = await getServiceById(id);
-    return service && service.type === type ? service : null;
+    // Verificar si el servicio existe y si el tipo está incluido en el array de tipos
+    return service && service.types.includes(type as any) ? service : null;
   })
 ).then(results => results.filter(Boolean) as AIService[]);
+
+// Generar metadatos SEO
+const seo = generateSEOMetadata({
+  title: `${t('compare.title')} - AI Pricing Hub`,
+  description: t('compare.description'),
+  locale: locale,
+  url: Astro.url,
+  site: Astro.site
+});
 ---
 
 <Layout 
-  title={`${t('compare.title')} - AI Pricing Hub`}
-  description={t('compare.description')}
+  title={seo.title}
+  description={seo.description}
   locale={locale}
 >
-  <div class="container mx-auto px-4 py-8 max-w-7xl">
-    
-    <BackButton {locale} client:load/>
+  <div class="container mx-auto pb-4 max-w-7xl">
     <h1 class="text-3xl font-bold mb-6">{t('compare.title')}</h1>
-
-    <CompareProvider client:load>
-      <CompareTable client:load locale={locale} initialServices={servicesToCompare} />
-    </CompareProvider>
-
+    
+    <!-- Componente React para la comparación -->
+    <CompareClient 
+      client:load 
+      initialServices={servicesToCompare} 
+      locale={locale}
+    />
   </div>
 </Layout>
