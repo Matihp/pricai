@@ -14,19 +14,21 @@ const { locale: urlLocale } = Astro.params;
 const locale = (urlLocale === 'es' || urlLocale === 'en') ? urlLocale : 'es' as SupportedLocale;
 const { t } = getLocaleAndTranslations(locale);
 
-// Obtener servicios desde la URL o localStorage
+// Obtener servicios desde la URL
 const serviceIds = Astro.url.searchParams.getAll('ids');
 
-// Obtener servicios de la base de datos
-const servicesToCompare = await Promise.all(
-  serviceIds.map(async (param) => {
-    const [type, id] = param.split(':');
-    if (!id) return null;
-    const service = await getServiceById(id);
-    // Verificar si el servicio existe y si el tipo está incluido en el array de tipos
-    return service && service.types.includes(type as any) ? service : null;
-  })
-).then(results => results.filter(Boolean) as AIService[]);
+// Obtener servicios de la base de datos si hay IDs en la URL
+const servicesToCompare = serviceIds.length > 0 
+  ? await Promise.all(
+      serviceIds.map(async (param) => {
+        const [type, id] = param.split(':');
+        if (!id) return null;
+        const service = await getServiceById(id);
+        // Verificar si el servicio existe y si el tipo está incluido en el array de tipos
+        return service && service.types.includes(type as any) ? service : null;
+      })
+    ).then(results => results.filter(Boolean) as AIService[])
+  : []; // Si no hay IDs, pasamos un array vacío y CompareClient cargará desde localStorage
 
 // Generar metadatos SEO
 const seo = generateSEOMetadata({

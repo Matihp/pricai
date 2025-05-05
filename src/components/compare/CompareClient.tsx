@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AIService } from "@/data/ai-data";
 import { getTranslation, type SupportedLocale } from "../../utils/i18n";
 import { useServices } from "@/hooks/useServices";
+import { useCompareContext } from "@/contexts/CompareContext";
 
 // Tipos de servicio disponibles
 const serviceTypes = [
@@ -18,7 +19,6 @@ const serviceTypes = [
 // Número máximo de servicios a comparar
 const MAX_SERVICES = 4;
 
-// Función para generar un color basado en el nombre de la empresa
 const stringToColor = (str: string) => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -71,49 +71,124 @@ const FeatureItem = ({ label, isEnabled }: { label: string, isEnabled: boolean }
   </div>
 );
 
+
 export default function CompareClient({ initialServices, locale = 'es' }: CompareClientProps) {
   const t = getTranslation(locale as SupportedLocale);
+  const { compareList, addToCompare, clearCompareList } = useCompareContext();
   
   const [selectedType, setSelectedType] = useState<string>("api");
   const [selectedServices, setSelectedServices] = useState<AIService[]>(initialServices || []);
   const [availableServices, setAvailableServices] = useState<AIService[]>([]);
+  
+  // Solo iniciamos en modo "compare" si hay initialServices desde la URL
   const [comparisonMode, setComparisonMode] = useState<"select" | "compare">(
-    initialServices.length >= 2 ? "compare" : "select"
+    initialServices.length >= 2 && typeof window !== 'undefined' && new URL(window.location.href).searchParams.has('ids') ? "compare" : "select"
   );
 
   // Usar el hook useServices en lugar de fetch directo
   const { services, loading: isLoading, error } = useServices({ type: selectedType });
+
+  // Cargar servicios desde localStorage si no hay initialServices
+  useEffect(() => {
+    if (initialServices.length === 0 && typeof window !== 'undefined') {
+      try {
+        // Intentar cargar desde compareList primero (el formato usado por CompareContext)
+        const savedList = localStorage.getItem('compareList');
+        if (savedList) {
+          const parsedList = JSON.parse(savedList);
+          if (Array.isArray(parsedList) && parsedList.length >= 2) {
+            setSelectedServices(parsedList);
+            // No cambiamos automáticamente a modo "compare"
+            // setComparisonMode("compare");
+            return;
+          }
+        }
+        
+        // Si no hay compareList, intentar con compareServices (formato antiguo)
+        const savedIds = localStorage.getItem('compareServices');
+        if (savedIds) {
+          const parsedIds = JSON.parse(savedIds);
+          if (Array.isArray(parsedIds) && parsedIds.length >= 2) {
+            // Aquí deberíamos cargar los servicios por ID, pero necesitaríamos
+            // una función para obtener servicios por ID que no está disponible aquí
+            // Por ahora, solo cambiaremos al modo de selección
+            setComparisonMode("select");
+          }
+        }
+      } catch (e) {
+        console.error('Error loading services from localStorage:', e);
+      }
+    }
+  }, [initialServices]);
 
   // Actualizar los servicios disponibles cuando cambian los resultados del hook
   useEffect(() => {
     if (services) setAvailableServices(services);
   }, [services]);
 
+  // Sincronizar con el contexto de comparación cuando se cargan servicios iniciales
+  useEffect(() => {
+    if (initialServices.length > 0 && typeof window !== 'undefined') {
+      // Actualizar localStorage con los servicios iniciales
+      localStorage.setItem('compareList', JSON.stringify(initialServices));
+      
+      // Limpiar el contexto y añadir los servicios iniciales
+      clearCompareList();
+      initialServices.forEach(service => {
+        addToCompare(service);
+      });
+    }
+  }, [initialServices, addToCompare, clearCompareList]);
+
   // Funciones para gestionar servicios
   const addService = (service: AIService) => {
     if (selectedServices.length < MAX_SERVICES && !selectedServices.some(s => s.id === service.id)) {
-      setSelectedServices([...selectedServices, service]);
+      const updatedServices = [...selectedServices, service];
+      setSelectedServices(updatedServices);
+      
+      // Guardar en localStorage inmediatamente
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('compareList', JSON.stringify(updatedServices));
+        
+        // También actualizar el formato antiguo para compatibilidad
+        const serviceIds = updatedServices.map(s => 
+          `${s.types && s.types.length > 0 ? s.types[0] : 'unknown'}:${s.id}`
+        );
+        localStorage.setItem("compareServices", JSON.stringify(serviceIds));
+      }
+      
+      // Añadir al contexto
+      addToCompare(service);
     }
   };
 
   const removeService = (serviceId: string) => {
-    setSelectedServices(selectedServices.filter((service) => service.id !== serviceId));
+    const updatedServices = selectedServices.filter((service) => service.id !== serviceId);
+    setSelectedServices(updatedServices);
+    
+    // Guardar en localStorage inmediatamente
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('compareList', JSON.stringify(updatedServices));
+      
+      // También actualizar el formato antiguo para compatibilidad
+      const serviceIds = updatedServices.map(s => 
+        `${s.types && s.types.length > 0 ? s.types[0] : 'unknown'}:${s.id}`
+      );
+      localStorage.setItem("compareServices", JSON.stringify(serviceIds));
+    }
   };
 
   const startComparison = () => {
     if (canCompare) {
       setComparisonMode("compare");
       
-      // Guardar en localStorage para persistencia
-      const serviceIds = selectedServices.map(service => 
-        `${service.types && service.types.length > 0 ? service.types[0] : 'unknown'}:${service.id}`
-      );
-      localStorage.setItem("compareServices", JSON.stringify(serviceIds));
-      
       // Actualizar URL para compartir
       const url = new URL(window.location.href);
       url.searchParams.delete("ids");
-      serviceIds.forEach(id => url.searchParams.append("ids", id));
+      selectedServices.forEach(service => {
+        const serviceType = service.types && service.types.length > 0 ? service.types[0] : 'unknown';
+        url.searchParams.append("ids", `${serviceType}:${service.id}`);
+      });
       window.history.pushState({}, "", url.toString());
     }
   };
