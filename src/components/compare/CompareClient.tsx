@@ -74,7 +74,7 @@ const FeatureItem = ({ label, isEnabled }: { label: string, isEnabled: boolean }
 
 export default function CompareClient({ initialServices, locale = 'es' }: CompareClientProps) {
   const t = getTranslation(locale as SupportedLocale);
-  const { compareList, addToCompare, clearCompareList } = useCompareContext();
+  const { addToCompare, clearCompareList } = useCompareContext();
   
   const [selectedType, setSelectedType] = useState<string>("api");
   const [selectedServices, setSelectedServices] = useState<AIService[]>(initialServices || []);
@@ -86,7 +86,9 @@ export default function CompareClient({ initialServices, locale = 'es' }: Compar
   );
 
   // Usar el hook useServices en lugar de fetch directo
-  const { services, loading: isLoading, error } = useServices({ type: selectedType });
+  const { services, loading: isLoading, error } = useServices({ 
+    types: [selectedType as "api" | "individual" | "code-editor"] 
+  });
 
   // Cargar servicios desde localStorage si no hay initialServices
   useEffect(() => {
@@ -109,7 +111,7 @@ export default function CompareClient({ initialServices, locale = 'es' }: Compar
         if (savedIds) {
           const parsedIds = JSON.parse(savedIds);
           if (Array.isArray(parsedIds) && parsedIds.length >= 2) {
-            // Aquí deberíamos cargar los servicios por ID, pero necesitaríamos
+            // Aca deberíamos cargar los servicios por ID, pero necesitaríamos
             // una función para obtener servicios por ID que no está disponible aquí
             // Por ahora, solo cambiaremos al modo de selección
             setComparisonMode("select");

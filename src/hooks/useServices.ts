@@ -26,12 +26,13 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export function useServices(options: UseServicesOptions = {}) {
   const [services, setServices] = useState<AIService[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Iniciar como false para evitar carga inicial innecesaria
   const [error, setError] = useState<Error | null>(null);
   const [total, setTotal] = useState(0);
   const previousOptionsRef = useRef<string>('');
   const initialLoadRef = useRef<boolean>(true);
   const retryCountRef = useRef<number>(0);
+  const optionsRef = useRef(options); // Referencia para evitar dependencias circulares
 
   const fetchWithRetry = async (url: string, retries = MAX_RETRIES): Promise<Response> => {
     try {
@@ -50,91 +51,78 @@ export function useServices(options: UseServicesOptions = {}) {
     }
   };
 
+  // Actualizar la referencia cuando cambian las opciones
   useEffect(() => {
-    const optionsString = JSON.stringify(options);
+    optionsRef.current = options;
+  }, [options]);
 
-    if (initialLoadRef.current && options.skipInitialCall) {
-      initialLoadRef.current = false;
-      setLoading(false);
-      return;
-    }
-
-    if (optionsString === previousOptionsRef.current && !initialLoadRef.current) {
-      return;
-    }
-
-    previousOptionsRef.current = optionsString;
-
-    if (initialLoadRef.current) {
-      initialLoadRef.current = false;
-    }
-    retryCountRef.current = 0;
-    
-    // Inside the fetchServices function
-    async function fetchServices() {
+  useEffect(() => {
+    // Función para obtener servicios
+    const fetchServices = async () => {
       try {
         setLoading(true);
         setError(null);
         
         const params = new URLSearchParams();
+        const currentOptions = optionsRef.current;
         
         // Mantener compatibilidad con el parámetro type
-        if (options.type) {
-          params.append('type', options.type);
+        if (currentOptions.type) {
+          params.append('type', currentOptions.type);
         }
         
         // Añadir soporte para múltiples tipos
-        if (options.types && options.types.length > 0) {
-          options.types.forEach(type => {
+        if (currentOptions.types && currentOptions.types.length > 0) {
+          currentOptions.types.forEach(type => {
             params.append('types', type);
           });
         }
         
-        if (options.categories && options.categories.length > 0) {
-          options.categories.forEach(category => {
+        if (currentOptions.categories && currentOptions.categories.length > 0) {
+          currentOptions.categories.forEach(category => {
             params.append('category', category);
           });
         }
         
-        if (options.minRating) {
-          params.append('minRating', options.minRating.toString());
+        if (currentOptions.minRating) {
+          params.append('minRating', currentOptions.minRating.toString());
         }
         
-        if (options.hasFree !== undefined) {
-          params.append('hasFree', options.hasFree.toString());
+        if (currentOptions.hasFree !== undefined) {
+          params.append('hasFree', currentOptions.hasFree.toString());
         }
         
-        if (options.hasAPI !== undefined) {
-          params.append('hasAPI', options.hasAPI.toString());
+        if (currentOptions.hasAPI !== undefined) {
+          params.append('hasAPI', currentOptions.hasAPI.toString());
         }
         
-        if (options.commercialUse !== undefined) {
-          params.append('commercialUse', options.commercialUse.toString());
+        if (currentOptions.commercialUse !== undefined) {
+          params.append('commercialUse', currentOptions.commercialUse.toString());
         }
         
-        if (options.customModels !== undefined) {
-          params.append('customModels', options.customModels.toString());
+        if (currentOptions.customModels !== undefined) {
+          params.append('customModels', currentOptions.customModels.toString());
         }
         
-        if (options.isNew !== undefined) {
-          params.append('isNew', options.isNew.toString());
+        if (currentOptions.isNew !== undefined) {
+          params.append('isNew', currentOptions.isNew.toString());
         }
         
-        if (options.releaseYear) {
-          params.append('releaseYear', options.releaseYear.toString());
+        if (currentOptions.releaseYear) {
+          params.append('releaseYear', currentOptions.releaseYear.toString());
         }
         
-        if (options.searchTerm) {
-          params.append('search', options.searchTerm);
+        if (currentOptions.searchTerm) {
+          params.append('search', currentOptions.searchTerm);
         }
         
         // Añadir parámetros de paginación
-        if (options.page) {
-          params.append('page', options.page.toString());
+        if (currentOptions.page) {
+          params.append('page', currentOptions.page.toString());
         }
         
-        if (options.limit) {
-          params.append('limit', options.limit.toString());
+        if (currentOptions.limit) {
+          params.append('limit', currentOptions.limit.toString());
         }
         
         const url = `/api/services?${params.toString()}`;
@@ -157,32 +145,34 @@ export function useServices(options: UseServicesOptions = {}) {
       } catch (err) {
         console.error('Error fetching services:', err);
         setError(err instanceof Error ? err : new Error('Error desconocido'));
-
       } finally {
         setLoading(false);
       }
+    };
+
+    const optionsString = JSON.stringify(options);
+
+    // Manejar el caso de skipInitialCall
+    if (initialLoadRef.current && options.skipInitialCall) {
+      initialLoadRef.current = false;
+      return;
     }
 
-    const timeoutId = setTimeout(() => {
-      fetchServices();
-    }, 100);
+    // Evitar solicitudes duplicadas
+    if (optionsString === previousOptionsRef.current && !initialLoadRef.current) {
+      return;
+    }
+
+    previousOptionsRef.current = optionsString;
+    initialLoadRef.current = false;
+    retryCountRef.current = 0;
     
-    return () => clearTimeout(timeoutId);
+    // Ejecutar la solicitud
+    fetchServices();
+    
   }, [
-    options.type,
-    options.types,
-    options.categories,
-    options.minRating,
-    options.hasFree,
-    options.hasAPI,
-    options.commercialUse,
-    options.customModels,
-    options.isNew,
-    options.releaseYear,
-    options.page,
-    options.limit,
-    options.skipInitialCall,
-    options.searchTerm
+    // Simplificar las dependencias para evitar ciclos
+    JSON.stringify(options)
   ]);
   
   return { services, loading, error, total, retryCount: retryCountRef.current };
