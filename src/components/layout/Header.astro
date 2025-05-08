@@ -28,7 +28,12 @@ const navItems = [
 ];
 
 const isCurrentPath = (itemPath: string) => {
-  return currentPath === itemPath;
+  if (itemPath === `${localePrefix}/`) {
+    return currentPath === localePrefix || 
+           currentPath === `${localePrefix}/` || 
+           currentPath === '/';
+  }
+  return currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
 };
 ---
 
