@@ -66,9 +66,12 @@ export const GET: APIRoute = async ({ request }) => {
   
   try {  
     const result = await fetchServicesWithRetry(queryString, async () => {
-      // Si hay múltiples tipos, filtrar los servicios después de obtenerlos
+      // Primero obtener todos los servicios si hay múltiples tipos
+      // o filtrar directamente por el tipo si solo hay uno
+      const useGenericQuery = types && types.length > 0;
+      
       const result = await getAIServices(
-        type ?? undefined,
+        useGenericQuery ? undefined : (type ?? undefined),
         page,
         limit,
         {

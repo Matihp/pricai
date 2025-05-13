@@ -543,64 +543,38 @@ export async function getCategories(): Promise<string[]> {
 }
 
 export async function getRelatedServices(
-  serviceId: string, 
-  categories: string[], 
-  limit: number = 3
+  serviceId: string,
+  categories: string[],
+  limit: number = 3,
+  type?: string
 ): Promise<AIService[]> {
-  const now = Date.now();
-  
-  if (allServicesCache && now - allServicesCache.timestamp < CACHE_TTL) {
-    return allServicesCache.data
-      .filter(s => 
-        s.id !== serviceId && 
-        s.categories.some(cat => categories.includes(cat))
-      )
-      .slice(0, limit);
-  }
-  
-  // Si no hay caché, hacemos una consulta específica para servicios relacionados
-  // en lugar de obtener todos los servicios
-  const categoryPlaceholders = categories.map(() => '?').join(',');
-  
-  const query = `
-    SELECT DISTINCT s.id
-    FROM ai_services s
-    JOIN service_categories sc ON s.id = sc.service_id
-    JOIN categories c ON sc.category_id = c.id
-    WHERE s.id != ? 
-    AND c.name IN (${categoryPlaceholders})
-    LIMIT ?
-  `;
-  
-  const params = [serviceId, ...categories, limit];
-  
   try {
-    const result = await db.execute({
-      sql: query,
-      args: params
+    // Obtener todos los servicios que comparten categorías
+    const result = await getAIServices(undefined, 1, 50, {
+      categories
     });
     
-    if (result.rows.length === 0) {
-      return [];
+    // Filtrar los servicios para excluir el servicio actual
+    let relatedServices = result.services.filter(service => service.id !== serviceId);
+    
+    // Si se proporciona un tipo, filtrar por ese tipo
+    if (type) {
+      relatedServices = relatedServices.filter(service => 
+        service.types.includes(type as "api" | "individual" | "code-editor")
+      );
     }
     
-    // Obtener los detalles completos de los servicios relacionados
-    const relatedIds = result.rows.map(row => row.id as string);
-    const relatedServices = await Promise.all(
-      relatedIds.map(id => getServiceById(id))
-    );
+    // Ordenar por relevancia (número de categorías compartidas)
+    relatedServices.sort((a, b) => {
+      const aMatches = a.categories.filter(cat => categories.includes(cat)).length;
+      const bMatches = b.categories.filter(cat => categories.includes(cat)).length;
+      return bMatches - aMatches;
+    });
     
-    return relatedServices.filter(Boolean) as AIService[];
+    // Limitar el número de resultados
+    return relatedServices.slice(0, limit);
   } catch (error) {
     console.error('Error al obtener servicios relacionados:', error);
-    
-    // Fallback a la implementación anterior si hay un error
-    const result = await getAIServices();
-    return result.services
-      .filter(s => 
-        s.id !== serviceId && 
-        s.categories.some(cat => categories.includes(cat))
-      )
-      .slice(0, limit);
+    return [];
   }
 }
