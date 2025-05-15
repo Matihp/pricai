@@ -2,7 +2,7 @@
 import Layout from "../../../layouts/Layout.astro";
 import { getLocaleAndTranslations } from "../../../utils/i18n";
 import type { SupportedLocale } from "../../../utils/i18n";
-import { Star, Calendar, Check, X } from "lucide-react";
+import { Calendar, Check, X } from "lucide-react";
 import { getRelatedServices, getServiceById } from "@/lib/service";
 import CompareButton from "../../../components/pricing/CompareButton";
 import ServiceDetailContainer from "../../../components/pricing/ServiceDetailContainer";
@@ -21,11 +21,17 @@ if (!id) {
 }
 
 const service = await getServiceById(id);
-if (!service || service.type !== type) {
+if (!service || !service.types.includes(type as any)) {
   return Astro.redirect(`/${locale}/`);
 }
 
-const relatedServices = await getRelatedServices(id, service.categories, 3);
+// Pasar el tipo actual a getRelatedServices
+const relatedServices = await getRelatedServices(id, service.categories, 3, type as string);
+
+// Filtrar los servicios relacionados para asegurar que solo se muestren los del mismo tipo
+const filteredRelatedServices = relatedServices.filter(
+  (relatedService) => relatedService.types.includes(type as any)
+);
 
 Astro.response.headers.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=7200');
 
@@ -61,10 +67,10 @@ const featureLabels = {
   description={`${description} - ${t("meta.description")}`}
   locale={locale}
 >
-  <ServiceDetailContainer client:load locale={locale}>
-    <div class="container mx-auto px-4 py-8 max-w-6xl">
-      <BackButton {locale} client:load/>
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <BackButton {locale} client:load/>
 
+    <ServiceDetailContainer client:load locale={locale}>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Información principal -->
         <div class="lg:col-span-2 space-y-8">
@@ -77,7 +83,7 @@ const featureLabels = {
                   >
                     {
                       typeTranslation[
-                        service.type as keyof typeof typeTranslation
+                        type as keyof typeof typeTranslation
                       ]
                     }
                   </span>
@@ -90,12 +96,6 @@ const featureLabels = {
                   }
                 </div>
                 <h1 class="text-3xl font-bold">{service.name}</h1>
-              </div>
-              <div
-                class="flex items-center gap-1 bg-card rounded-full px-3 py-1 shadow-sm border border-border"
-              >
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span class="font-medium">{service.rating.toFixed(1)}</span>
               </div>
             </div>
 
@@ -188,7 +188,7 @@ const featureLabels = {
             </h2>
 
             <div class="mb-6">
-              <div class="text-3xl font-bold">{service.price}</div>
+              <!-- <div class="text-3xl font-bold">{service.price}</div> -->
               <div class="text-sm text-muted-foreground">
                 {service.priceDetails}
               </div>
@@ -295,35 +295,30 @@ const featureLabels = {
         </div>
       </div>
 
-      <!-- Servicios relacionados (removed duplicate section) -->
-      <div class="mt-12">
-        <h2 class="text-2xl font-bold mb-6">{t("service.relatedServices")}</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {
-            relatedServices
-              .map((relatedService) => (
+      <!-- Servicios relacionados - Solo mostrar si hay servicios relacionados -->
+      {filteredRelatedServices.length > 0 && (
+        <div class="mt-12">
+          <h2 class="text-2xl font-bold mb-6">{t("service.relatedServices")}</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {
+              filteredRelatedServices.map((relatedService) => (
                 <a
-                  href={`/${locale}/${relatedService.type}/${relatedService.id}`}
+                  href={`/${locale}/${type}/${relatedService.id}`}
                   class="bg-card rounded-xl shadow-sm p-6 border border-border hover:shadow-md transition-all"
                 >
                   <div class="flex justify-between items-start mb-4">
                     <h3 class="font-semibold">{relatedService.name}</h3>
-                    <div class="flex items-center gap-1 text-sm">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span>{relatedService.rating.toFixed(1)}</span>
-                    </div>
                   </div>
                   <p class="text-sm text-muted-foreground mb-4 line-clamp-2">
                     {typeof relatedService.description === "object"
                       ? relatedService.description[locale]
                       : relatedService.description}
                   </p>
-                  <div class="text-lg font-bold">{relatedService.price}</div>
                 </a>
               ))
-          }
+            }
+          </div>
         </div>
-      </div>
-    </div>
+      )}
   </ServiceDetailContainer>
 </Layout>
