@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { CompareProvider } from "../../contexts/CompareContext";
-import CompareFloatingButton from "./CompareFloatingButton";
+import CompareFloatingButton from "../compare/CompareFloatingButton";
 import type { SupportedLocale } from "../../utils/i18n";
 
 interface ServiceDetailContainerProps {

@@ -5,7 +5,7 @@ import ServiceTabs from "./pricing/ServiceTabs";
 import { type SupportedLocale } from "../utils/i18n";
 import { useServices } from "../hooks/useServices";
 import { CompareProvider } from "../contexts/CompareContext";
-import CompareFloatingButton from "./pricing/CompareFloatingButton";
+import CompareFloatingButton from "./compare/CompareFloatingButton";
 export const prerender = false;
 
 interface AIPricingHubProps {
