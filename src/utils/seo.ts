@@ -1,4 +1,4 @@
-import { getLocaleAndTranslations, getTranslation, type SupportedLocale } from './i18n';
+import { getTranslation, type SupportedLocale } from './i18n';
 
 interface SEOProps {
   title?: string;

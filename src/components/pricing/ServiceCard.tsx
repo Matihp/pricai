@@ -1,4 +1,4 @@
-import { Plus, SquarePlus, Star } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
