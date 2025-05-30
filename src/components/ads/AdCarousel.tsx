@@ -9,6 +9,8 @@ interface Ad {
 export default function AdCarousel() {
   const [currentAd, setCurrentAd] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
 
   const ads: Ad[] = [
     {
@@ -41,8 +43,38 @@ export default function AdCarousel() {
     return () => clearInterval(timer);
   }, []);
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    setTouchEnd(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      nextAd();
+    } else if (isRightSwipe) {
+      prevAd();
+    }
+
+    setTouchStart(0);
+    setTouchEnd(0);
+  };
+
   return (
-    <div className="w-full max-w-3xl mx-auto mb-6 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow relative group">
+    <div 
+      className="w-full max-w-3xl mx-auto mb-6 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow relative group"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <a 
         href={ads[currentAd].link}
         target="_blank"
