@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/pagination";
 import { type SupportedLocale, getTranslation } from "../../utils/i18n";
 import { cn } from "@/lib/utils";
-export const prerender = false;
 
 interface PaginationControlsProps {
   currentPage: number;
