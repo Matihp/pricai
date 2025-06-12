@@ -21,7 +21,6 @@ import { getTranslation, type SupportedLocale } from "../../utils/i18n";
 import PaginationControls from "./PaginationControls";
 import { useState, useEffect } from "react";
 import { ServiceGridSkeleton, TabsSkeleton } from "./SkeletonLoaders";
-export const prerender = false;
 
 interface ServiceTabsProps {
   isFilterOpen: boolean;

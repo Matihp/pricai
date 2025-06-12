@@ -20,7 +20,6 @@ import {
 import type { AIService } from "@/data/ai-data";
 import { type SupportedLocale, getTranslation } from "../../utils/i18n";
 import { useCompareContext } from "@/contexts/CompareContext";
-export const prerender = false;
 
 const stringToColor = (str: string) => {
   let hash = 0;

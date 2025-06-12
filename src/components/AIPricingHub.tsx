@@ -7,7 +7,6 @@ import { useServices } from "../hooks/useServices";
 import { CompareProvider } from "../contexts/CompareContext";
 import CompareFloatingButton from "./compare/CompareFloatingButton";
 import AdCarousel from "./ads/AdCarousel";
-export const prerender = false;
 
 interface AIPricingHubProps {
   initialServices?: AIService[];
