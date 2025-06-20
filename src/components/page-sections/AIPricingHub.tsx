@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import type { AIService } from "@/data/ai-data";
-import FilterSidebar from "./pricing/FilterSidebar";
-import ServiceTabs from "./pricing/ServiceTabs";
-import { type SupportedLocale } from "../utils/i18n";
-import { useServices } from "../hooks/useServices";
-import { CompareProvider } from "../contexts/CompareContext";
-import CompareFloatingButton from "./compare/CompareFloatingButton";
-import AdCarousel from "./ads/AdCarousel";
+import FilterSidebar from "../pricing/FilterSidebar";
+import ServiceTabs from "../pricing/ServiceTabs";
+import { type SupportedLocale } from "@/utils/i18n";
+import { useServices } from "@/hooks/useServices";
+import { CompareProvider } from "@/contexts/CompareContext";
+import CompareFloatingButton from "../compare/CompareFloatingButton";
+import AdCarousel from "../ads/AdCarousel";
 
 interface AIPricingHubProps {
   initialServices?: AIService[];
